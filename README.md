@@ -1,2 +1,1 @@
-# vdpnotes
-VDP notes
+Notes about trying to make sense out of [nukeymt's Verilog conversion of the VDP decap](https://github.com/nukeykt/Nuked-MD-FPGA/blob/main/ym7101.v). Probably full of inaccuracies, you've been warned.
