@@ -146,22 +146,25 @@ w230     Register 01001 ($09) write enable
 w231     Register 01000 ($08) write enable
 w232     Register 01110 ($0E) write enable
 w233     Register 01101 ($0D) write enable
-w234     [???] w250 if reg_test0[1] == 1
-w235     [???] w250 if reg_test0[1] == 0
+w234     Increment DMA source and decrement length by 256 (if reg_test0[1] == 1)
+w235     Increment DMA source and decrement length by 1 (if reg_test0[1] == 0)
 w244     End of DMA transfer, 1 iteration early? ([???] reg_lg == 16'hfffe & w250)
 w245     DMA in progress & reg_dmd == 2'h3 (DMA copy)
-w246     DMA in progress & reg_dmd == 2'h1 (DMA transfer)
-w247     DMA in progress & reg_dmd == 2'h0 (DMA transfer)
+w246     DMA in progress & reg_dmd == 2'h1 (DMA transfer from RAM)
+w247     DMA in progress & reg_dmd == 2'h0 (DMA transfer from ROM)
 w248     DMA in progress & reg_dmd == 2'h2 (DMA fill)
+w250     Increment DMA source address
+w251     Decrement DMA length (second byte)
 w252     Status port FULL bit (0 = FIFO has room, 1 = FIFO is full)
 w254     Is FIFO still empty
+w255     Increment DMA source address (second byte)
 w256     Send entry address from FIFO to VRAM bus (see below)
 w257     w256 when FIFO index == 1, sends entry's address to VRAM address bus
 w258     w256 when FIFO index == 0, sends entry's address to VRAM address bus
 w259     w256 when FIFO index == 3, sends entry's address to VRAM address bus
 w260     w256 when FIFO index == 2, sends entry's address to VRAM address bus
 w264     New FIFO read index?
-w267     (low logic) VRAM address output strobe
+w267     DMA in progress & reg_dmd[1] == 1 (DMA transfer)
 w276     Lower byte FIFO write strobe (68000 bus)
 w277     Lower byte FIFO write (see l55..l58)
 w278     Upper byte FIFO write strobe (68000 bus)
@@ -297,6 +300,7 @@ w481     H Timing signal: fetch sprite X and tile ID
 w482     H Timing signal: fetch sprite tile (fed into l141)
 w483     H Timing signal: odd pixels (for what is this used?)
 w484     H Timing singal: m4 sprite tile fetch (1st half)
+w485     H Timing signal: m4 sprite X / tile ID fetches? (active scan only, passive scan is weird) (to l155)
 w486     H Timing signal: m4 sprite Y fetches?
 w487     H Timing signal: m4 fetch sprite Y data???, m5 scan sprite Y data? (fed into l147)
 w488     H Timing signal: ??? (fetch hscroll table?)
@@ -312,6 +316,7 @@ w505     H Timing signal: VSRAM read in full vscroll? (low logic) hpos = 258 (H3
 w506     H Timing signal: VSRAM read in column vscroll? (H counter is multiple of 8px (0, 8, 16, 24...504))
 w507     H Timing signal: H counter multiple of 8px + 7 (mode 4), multiple of 16px + 7 (mode 5)
 w508     H Timing signal: H counter multiple of 16px + 15
+w510     H Timing signal: 3px after sprite X & tile ID fetch in mode 5 (to l145)
 w512     H Timing signal: H counter multiple of 16px + 3
 w515     VScroll value to work with (VSRAM output in mode 5, register $09 in mode 4)
 w519     Clear when vscroll inhibit should kick in, set otherwise
@@ -375,18 +380,22 @@ w656     Sprite height bit 1?
 w657     Sprite height bit 0?
 w663     Set if sprite height == 1 tile
 w664     Set if sprite height == 3 tiles
-w695     SAT index to read?
+w695     [???] SAT index to read?
+w696     Sprite index to access (to l398)
 w705     reg_test_18[6:5] == 2 (low logic) Use latched sprite [other] for w770
 w706     reg_test_18[6:5] == 1 (low logic) Use latched sprite pattern l425 for w770
 w707     reg_test_18[6:5] == 0 (low logic) Use latched sprite X coordinate for w770
+w732     [???] (from w738, throws in more test register stuff)
 w738     [???] w717 when reg_test0[14] == 0
 w740     Is VRAM address within sprite table range
 w741     Is VRAM address within sprite cache range
 w742     Timing signal: sprite tile fetch for mode 4 (enables VRAM bus)
 w751     Timing signal: sprite tile fetch for mode 4 (unfilitered, goes to w742)
+w752     Sprite index to access (from l400, latched to l403..l409)
 w754     Timing signal: sprite table fetch for mode 4? (l411 and l412, enables VRAM bus)
 w755     Timing signal: sprite table fetch for mode 4? (l412 only)
 w756     Timing signal: sprite table fetch for mode 5? (enables VRAM bus)
+w757     Bottom 7 bits of mode 5 sprite table address to access
 w759     [???] l426 & reg_test0[12] (related to source of sprite X? what's l426?)
 w760     [???] l426 & ~reg_test0[12] (related to source of sprite X? what's l426?)
 w770     Debug: sprite metadata (yoffset[2:0],height[1:0],width[1:0],pri,pal[1:0],hflip), pattern or X
@@ -622,12 +631,14 @@ l138     H Timing signal: end of equalization pulse (see w499)
 l141     H Timing signal: fetch sprite tile (see w482)
 l143     H Timing signal: start of hblank (see w495)
 l144     H Timing signal: (whatever w498 is)
-l145     H Timing signal: (whatever w510 is)
+l145     H Timing signal: 3px after sprite X & tile ID fetch in mode 5 (from w510)
 l146     H Timing signal: (whatever w509 is)
 l147     H Timing signal: m4 fetch sprite Y data, m5 scan sprite Y data? (see w487)
 l148     H Timing signal: (whatever w488 is)
 l149     External HSync pin input
 l152     End of hblank
+l155     H Timing signal: m4 sprite X / tile ID fetches? (active scan only, passive scan is weird) (from w485)
+l156     H Timing signal: (whatever w484 is)
 l158     HBLANK flag in mode 5 (delayed by one cycle compared to mode 4 l129)
 l162     V Timing signal: line 511 (from w475, turned high logic)
 l163     V Timing signal: ??? (always 3 lines after w473, end of the extra sync pulses maybe?) (from w474)
@@ -673,6 +684,16 @@ l320     [???] (found a lot in the layer mux block)
 l327     (see l328 -> l332)
 l328     (see l332)
 l332     { sat_size, sat_link }
+l398     Sprite index to access (from w696, to l399)
+l399     Sprite index to access (from l398, to l400)
+l400     Sprite index to access (from l399, to l403..l409 via w752)
+l403     Sprite index to read, bit 0 (from l400 via w752, to w757);
+l404     Sprite index to read, bit 1 (from l400 via w752, to w757);
+l405     Sprite index to read, bit 2 (from l400 via w752, to w757);
+l406     Sprite index to read, bit 3 (from l400 via w752, to w757);
+l407     Sprite index to read, bit 4 (from l400 via w752, to w757);
+l408     Sprite index to read, bit 5 (from l400 via w752, to w757);
+l409     Sprite index to read, bit 6 (from l400 via w752, to w757);
 l413     Sprite hflip latch
 l414     Sprite palette latch
 l415     Sprite priority latch
