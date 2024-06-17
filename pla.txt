@@ -1,0 +1,72 @@
+=== VERTICAL ===
+
+w467     V counter wraparound point (wraps after this line)
+w468     (low logic) End of top border (start of display)
+w469     (low logic) Start of bottom border (end of display)
+w470     End of bottom border (start of bottom TV blank)
+w471     Start of top border (end of top TV blank)
+w472     Start of vsync (end of bottom TV blank)
+w473     End of vsync (start of top TV blank)
+w474     ??? (3 lines after w473)
+w475     (low logic) line 511 (start of scan)
+
+Not part of the PLA, but w428 is the value loaded into the V counter when it
+wraps around.
+
+
+=== HORIZONTAL ===
+
+Signal   Mode 5                           Mode 4
+------   ------------------------------   ------------------------------
+w476     Refresh slots
+w477     Plane A tilemap fetches          Plane A tilemap fetches
+w478     Plane B tilemap fetches
+w479     Plane A or B tile fetches #1     Plane A tile fetches #1
+w480     Plane A or B tile fetches #2     Plane A tile fetches #2
+w481     Sprite X and tile ID fetches     ? Sprite X and tile ID fetches
+w482     Sprite tile fetches              Sprite tile fetches (1st,3rd,5th,7th sprite)
+w483     Odd pixels                       Odd pixels
+w484                                      Sprite tile fetches (1st half)
+w485                                      ???
+w486                                      Sprite Y fetches
+w487     Sprite Y scan?                   Sprite Y fetches
+w488     HScroll table fetch
+w489                                      Sprite tile fetches (2nd,4th,6th,8th sprite)
+
+Not part of the PLA, but w364 is the value loaded into the H counter when it
+wraps around.
+
+All of the above *except* w483 are aligned to even pixels, so it's likely that
+w483's purpose is something to do with finishing the accesses or the like. Need
+to examine the Verilog file further to know for sure.
+
+w486 and w487 overlap in mode 4 (but w487 has more stuff going on in mode 5),
+not sure what's going on. Maybe they're used together to trigger different parts
+of the circuit?
+
+w490     H counter wraparound point*      H counter wraparound point*
+w493     Start of display                 Start of display
+w494     Start of right border            Start of right border
+w495     Start of hblank*                 Start of hblank*
+w496     End of hblank*                   End of hblank*
+w499     End of equalizing pulse**        End of equalizing pulse**
+w500     Start of hsync*                  Start of hsync*
+w500     Start of back porch*             Start of back porch*
+w501     End of hsync*                    End of hsync*
+w502     Increment V counter              Increment V counter
+w504     Start of vblank                  Start of vblank
+w505     F flag cleared                   F flag cleared
+w505     VSRAM read (full vscroll)*
+w506     VSRAM read (column vscroll)*
+
+Yes, w500 and w505 seem to perform double duty.
+
+* H counter wraparound point is actually 1 less than the last value. Since some
+  signals seem delayed by 2 cycles this is probably to account for the latency.
+* Start and end of hblank take 10px to be visible to the CPU.
+* Start and end of hsync take 11px to reach the pin.
+* Start of back porch has 2px of latency.
+* VSRAM reads seem to have 1px of latency.
+
+** Haven't measured the equalizing pulses but I assume that they have the same
+   11px delay that hsync pulses have. I could be wrong though.
