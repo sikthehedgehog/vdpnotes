@@ -1,0 +1,22 @@
+// Value to load when H counter wraps around
+
+	assign w364 = w88 ? io_data[8:0] : { 4'he, ~w365, w368, w367, w366, w365 };
+	
+	assign w365 = ~reg_80_b0 & reg_rs1 & reg_m5; // H40 M5 internal sync
+	assign w366 = ~reg_80_b0 & ~reg_rs1;         // H32 internal sync
+	assign w367 = reg_80_b0 & ~reg_rs1;          // H32 external sync
+	assign w368 = w365 | w369;                   //
+	assign w369 = ~reg_rs1 & reg_80_b0 & reg_m5; // H32 M5 external sync
+
+
+               w365 w366 w367 w368 w369 rs1 m5 ext
+H32 M5 INT       0    1    0    0    0   0   1  0     111010010 9'h1D2 9'd466
+H40 M5 INT       1    0    0    1    0   1   1  0     111001001 9'h1C9 9'd457
+H32 M4 INT       0    1    0    0    0   0   0  0     111010010 9'h1D2 9'd466
+H40 M4 INT       0    0    0    0    0   1   0  0     111010000 9'h1D0 9'd464 !!
+H32 M5 EXT       0    0    1    1    1   0   1  1     111011100 9'h1DC 9'd476
+H40 M5 EXT       0    0    0    0    0   1   1  1     111010000 9'h1D0 9'd464
+H32 M4 EXT       0    0    1    0    0   0   0  1     111010100 9'h1D4 9'd468
+H40 M4 EXT       0    0    0    0    0   1   0  1     111010000 9'h1D0 9'd464 !!
+
+!! = bad setting

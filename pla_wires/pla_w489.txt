@@ -1,0 +1,6 @@
+	assign w489 = pla_hcnt1[31] | pla_hcnt1[28] | pla_hcnt1[29] | pla_hcnt1[30];
+
+	assign pla_hcnt1[31] = w466 & ~reg_m5 & (l106 & 9'd509) == 9'd272; // 272,274
+	assign pla_hcnt1[30] = w466 & ~reg_m5 & (l106 & 9'd509) == 9'd284; // 284,286
+	assign pla_hcnt1[29] = w466 & ~reg_m5 & (l106 & 9'd509) == 9'd476; // 476,478
+	assign pla_hcnt1[28] = w466 & ~reg_m5 & (l106 & 9'd509) == 9'd488; // 488,490

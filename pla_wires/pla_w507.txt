@@ -1,0 +1,7 @@
+// Mode 4: H counter is multiple of 8px + 7
+// Mode 5: H counter is multiple of 16px + 7
+
+	assign w507 = pla_hcnt2[9] | pla_hcnt2[10];
+
+	assign pla_hcnt2[10] = (l106 & 9'd15) == 9'd7; // 7, 23, 39...
+	assign pla_hcnt2[9] = ~reg_m5 & (l106 & 9'd15) == 9'd15; // 15, 31, 47...

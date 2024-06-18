@@ -1,0 +1,6 @@
+	assign w509 = pla_hcnt2[4] | pla_hcnt2[5] | pla_hcnt2[6] | pla_hcnt2[7];
+
+	assign pla_hcnt2[7] = ~reg_m5 & l106 == 9'd267;
+	assign pla_hcnt2[6] = ~reg_m5 & l106 == 9'd279;
+	assign pla_hcnt2[5] = ~reg_m5 & l106 == 9'd471;
+	assign pla_hcnt2[4] = ~reg_m5 & l106 == 9'd483;

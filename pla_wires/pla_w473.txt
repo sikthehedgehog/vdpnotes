@@ -1,0 +1,18 @@
+// Start of TV vblanking (above)
+
+	assign w473 = pla_vcnt[9] | pla_vcnt[10] | pla_vcnt[11] | pla_vcnt[12]
+		| pla_vcnt[13] | pla_vcnt[14] | pla_vcnt[15] | pla_vcnt[16];
+
+	assign pla_vcnt[15] = ~w446 & ~cpu_pal &  w107   & l105 == 9'd488; // 60Hz V28 EVEN
+	assign pla_vcnt[11] =  w446 & ~cpu_pal &  w107   & l105 == 9'd487; // 60Hz V28 ODD
+	assign pla_vcnt[16] = ~w446 & ~cpu_pal & ~reg_m5 & l105 == 9'd472; // 60Hz M4  EVEN
+	
+	assign pla_vcnt[13] = ~w446 &  cpu_pal &  w107   & l105 == 9'd461; // 50Hz V28 EVEN
+	assign pla_vcnt[10] =  w446 &  cpu_pal &  w107   & l105 == 9'd460; // 50Hz V28 ODD
+	assign pla_vcnt[12] = ~w446 &  cpu_pal &  w108   & l105 == 9'd469; // 50Hz V30 EVEN
+	assign pla_vcnt[9]  =  w446 &  cpu_pal &  w108   & l105 == 9'd468; // 50Hz V30 ODD
+	assign pla_vcnt[14] = ~w446 &  cpu_pal & ~reg_m5 & l105 == 9'd445; // 50Hz M4  EVEN
+
+//w107 = V28
+//w108 = V30
+//w446 = ODD

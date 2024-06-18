@@ -1,0 +1,7 @@
+// Start of vblank
+
+	assign w469 = ~(pla_vcnt[37] | pla_vcnt[38] | pla_vcnt[39]);
+
+	assign pla_vcnt[39] = ~reg_m5 & l105 == 9'd192; // Mode 4
+	assign pla_vcnt[38] = w107 & l105 == 9'd224;    // Mode 5 V28
+	assign pla_vcnt[37] = w108 & l105 == 9'd240;    // Mode 5 V30

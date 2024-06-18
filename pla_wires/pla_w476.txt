@@ -1,0 +1,11 @@
+// Seems to be the refresh cycles
+
+	assign w476 = pla_hcnt1[60] | pla_hcnt1[61] | pla_hcnt1[62];
+
+   // Display on
+	assign pla_hcnt1[62] = w466 & reg_m5 & (l106 & 9'd319) == 9'd50;  // 50,114,178,242
+	assign pla_hcnt1[61] = w466 & reg_m5 & reg_rs1 & l106 == 9'd306;  // 306
+	
+	// Every 64 pixels if display off
+	assign pla_hcnt1[60] = ~w466 & (l106 & 9'd63) == 9'd50;
+	   // 50,114,178,242,306,370,434,498

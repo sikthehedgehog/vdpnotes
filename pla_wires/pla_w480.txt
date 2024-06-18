@@ -1,0 +1,18 @@
+// Plane A and B tile fetches, 2nd tile (mode 5)
+// Plane A tile fetches, 2nd half (mode 4)
+
+	assign w480 = pla_hcnt1[45] | pla_hcnt1[46] | pla_hcnt1[51] | pla_hcnt1[52];
+
+   // Triggers 41 times in H40
+   // Triggers 34 times in H32
+   // Triggers 32 times in mode 4
+
+	assign pla_hcnt1[46] = w466 & reg_m5 & l106 == 9'd502;
+	assign pla_hcnt1[45] = w466 & reg_m5 & l106 == 9'd510;
+	assign pla_hcnt1[52] = w466 & (l106 & 9'd263) == 9'd6;
+	   //   6, 14, 22, 30, 38, 46, 54, 62,
+	   //  70, 78, 86, 94,102,110,118,126,
+	   // 134,142,150,158,166,174,182,190,
+	   // 198,206,214,222,230,238,246,254
+	assign pla_hcnt1[51] = w466 & reg_m5 & reg_rs1 & (l106 & 9'd455) == 9'd262;
+	   // 262,270,278,286,294,302,310,318

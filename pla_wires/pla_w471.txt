@@ -1,0 +1,14 @@
+// Start of top border
+
+	assign w471 = pla_vcnt[25] | pla_vcnt[26] | pla_vcnt[27]
+		| pla_vcnt[28] | pla_vcnt[29];
+
+	assign pla_vcnt[28] = ~cpu_pal &  w107   & l105 == 9'd501; // 60Hz V28
+	assign pla_vcnt[29] = ~cpu_pal & ~reg_m5 & l105 == 9'd485; // 60Hz M4
+	
+	assign pla_vcnt[26] =  cpu_pal &  w107   & l105 == 9'd474; // 50Hz V28
+	assign pla_vcnt[25] =  cpu_pal &  w108   & l105 == 9'd482; // 50Hz V30
+	assign pla_vcnt[27] =  cpu_pal & ~reg_m5 & l105 == 9'd458; // 50Hz M4
+
+//w107 = V28
+//w108 = V30

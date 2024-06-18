@@ -1,0 +1,5 @@
+// Odd pixels
+
+	assign w483 = pla_hcnt1[44];
+
+	assign pla_hcnt1[44] = (l106 & 9'd1) == 9'd1;

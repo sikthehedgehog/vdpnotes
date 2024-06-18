@@ -1,0 +1,16 @@
+// Plane A tilemap fetches
+
+	assign w477 = pla_hcnt1[50] | pla_hcnt1[57] | pla_hcnt1[58] | pla_hcnt1[59];
+
+   // Triggers 17 times in H32
+   // Triggers 21 times in H40
+	assign pla_hcnt1[50] = w466 & reg_m5 & l106 == 9'd496;
+	assign pla_hcnt1[59] = w466 &          (l106 & 9'd271) == 9'd0;   // 0,16,32,48,64,80,96,112,
+	                                                                  // 128,144,160,176,192,208,224,240
+	assign pla_hcnt1[58] = w466 & reg_m5 & reg_rs1 & (l106 & 9'd463) == 9'd256;   // 256,272,288,304
+
+   // Triggers 32 times in mode 4
+	assign pla_hcnt1[57] = w466 & ~reg_m5 & (l106 & 9'd271) == 9'd8;  // 8,24,40,56,72,88,104,120,
+	                                                                  // 136,152,168,184,200,216,232,248
+	assign pla_hcnt1[59] = w466 &           (l106 & 9'd271) == 9'd0;  // 0,16,32,48,64,80,96,112,
+	                                                                  // 128,144,160,176,192,208,224,240

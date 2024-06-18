@@ -1,0 +1,13 @@
+// Plane B tilemap fetches in mode 5
+// More plane A tilemap fetches in mode 4? (but w477 already covers that, may be a side effect)
+
+	assign w478 = pla_hcnt1[49] | pla_hcnt1[55] | pla_hcnt1[56];
+
+   // Triggers 21 times in H40
+   // Triggers 17 times in H32
+   // Triggers 16 times in mode 4
+   
+	assign pla_hcnt1[49] = w466 & reg_m5 &           l106 == 9'd504;
+	assign pla_hcnt1[56] = w466 &                    (l106 & 9'd271) == 9'd8; // 8,24,40,56,72,88,104,120,
+	                                                                          // 136,152,168,184,200,216,232,248
+	assign pla_hcnt1[55] = w466 & reg_m5 & reg_rs1 & (l106 & 9'd463) == 9'd264; // 264,280,296,312

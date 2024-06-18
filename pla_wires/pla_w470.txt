@@ -1,0 +1,13 @@
+// End of bottom border, start of bottom TV blank
+
+	assign w470 = pla_vcnt[30] | pla_vcnt[31] | pla_vcnt[32]
+		| pla_vcnt[33] | pla_vcnt[34] | pla_vcnt[35] | pla_vcnt[36];
+
+	assign pla_vcnt[35] =             ~cpu_pal &  w107   & l105 == 9'd232; // 60Hz V28
+	assign pla_vcnt[36] =             ~cpu_pal & ~reg_m5 & l105 == 9'd216; // 60Hz M4
+	
+	assign pla_vcnt[33] = ~reg_lsm0 &  cpu_pal &  w107   & l105 == 9'd256; // 50Hz V28 ~IM
+	assign pla_vcnt[31] =  reg_lsm0 &  cpu_pal &  w107   & l105 == 9'd255; // 50Hz V28  IM
+	assign pla_vcnt[32] = ~reg_lsm0 &  cpu_pal &  w108   & l105 == 9'd264; // 50Hz V30 ~IM
+	assign pla_vcnt[30] =  reg_lsm0 &  cpu_pal &  w108   & l105 == 9'd263; // 50Hz V30  IM
+	assign pla_vcnt[34] = ~reg_lsm0 &  cpu_pal & ~reg_m5 & l105 == 9'd240; // 50Hz M4  ~IM

@@ -1,0 +1,9 @@
+// Sprite tile fetches (1st half) in mode 4
+
+	assign w484 = pla_hcnt1[0] | pla_hcnt1[1] | pla_hcnt1[2] | pla_hcnt1[3] | pla_hcnt1[4];
+
+	assign pla_hcnt1[4] = w466 & ~reg_m5 & (l106 & 9'd495) == 9'd268; // 268,284
+	assign pla_hcnt1[3] = w466 & ~reg_m5 & (l106 & 9'd503) == 9'd272; // 272,280
+	assign pla_hcnt1[2] = w466 & ~reg_m5 & (l106 & 9'd507) == 9'd472; // 472,476
+	assign pla_hcnt1[1] = w466 & ~reg_m5 & l106 == 9'd484;
+	assign pla_hcnt1[0] = w466 & ~reg_m5 & l106 == 9'd488;

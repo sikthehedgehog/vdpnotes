@@ -1,0 +1,5 @@
+// H counter = 0
+
+	assign w504 = pla_hcnt2[14];
+
+	assign pla_hcnt2[14] = l106 == 9'd0;

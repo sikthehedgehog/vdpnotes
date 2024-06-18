@@ -1,0 +1,4 @@
+// Hscroll table fetch? (something that happens only in mode 5)
+
+	assign w488 = pla_hcnt1[23];
+	assign pla_hcnt1[23] = w466 & reg_m5 & l106 == 9'd486;

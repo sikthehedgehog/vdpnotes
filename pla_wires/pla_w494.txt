@@ -1,0 +1,6 @@
+// End of display, start of right border
+
+	assign w494 = pla_hcnt2[36] | pla_hcnt2[37];
+
+	assign pla_hcnt2[37] = ~reg_rs1 & l106 == 9'd266;  // H32
+	assign pla_hcnt2[36] = reg_rs1 & l106 == 9'd330;   // H40

@@ -1,0 +1,6 @@
+// H Enable display
+
+	assign w493 = pla_hcnt2[38] | pla_hcnt2[39];
+
+	assign pla_hcnt2[38] = l106 == 9'd18;
+	assign pla_hcnt2[39] = ~reg_lcb & l106 == 9'd10;

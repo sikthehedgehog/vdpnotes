@@ -1,0 +1,7 @@
+// Start of hblank
+// This is delayed by... 10 dots???
+
+	assign w495 = pla_hcnt2[34] | pla_hcnt2[35];
+
+	assign pla_hcnt2[35] = ~reg_rs1 & l106 == 9'd284;  // H32: 284 (256 + 28)
+	assign pla_hcnt2[34] = reg_rs1 & l106 == 9'd348;   // H40: 348 (320 + 28)

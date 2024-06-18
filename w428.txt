@@ -1,0 +1,32 @@
+// Value to load when V counter wraps around
+
+	assign w428 = w86 ? io_data[8:0] :
+		{ 2'h3, ~w431, w429, ~w107, w433, ~cpu_pal, w434, w435 };
+
+	assign w429 = w430 | w431;
+	assign w430 = ~cpu_pal & w107;      // 60Hz and M5:V28
+	assign w431 = cpu_pal & ~reg_m5;    // 50Hz and M4
+	assign w432 = cpu_pal & w107;       // 50Hz and M5:V28
+	assign w433 = w432 | w431;
+	assign w434 = cpu_pal & ~w446;      // 50Hz and even
+	assign w435 = (~cpu_pal) ^ w446;    // 60Hz xor odd
+
+w107 = 1 if V28 and mode 5
+w446 = ODD bit
+
+
+                     w107 w429 w430 w431 w432 w433 w434 w435 w446
+60Hz M5:V28 EVEN       1    1    1    0    0    0    0    1    0     111100101 9'h1E5 9'd485
+60Hz M5:V28 ODD        1    1    1    0    0    0    0    0    1     111100100 9'h1E4 9'd484
+60Hz M5:V30 EVEN       0    0    0    0    0    0    0    1    0     111010101 9'h1D5 9'd469 !!
+60Hz M5:V30 ODD        0    0    0    0    0    0    0    0    1     111010100 9'h1D4 9'd468 !!
+60Hz M4:--- EVEN       0    0    0    0    0    0    0    1    0     111010101 9'h1D5 9'd469
+60Hz M4:--- ODD        0    0    0    0    0    0    0    0    1     111010100 9'h1D4 9'd468
+50Hz M5:V28 EVEN       1    0    0    0    1    1    1    0    0     111001010 9'h1CA 9'd458
+50Hz M5:V28 ODD        1    0    0    0    1    1    0    1    1     111001001 9'h1C9 9'd457
+50Hz M5:V30 EVEN       0    0    0    0    0    0    1    0    0     111010010 9'h1D2 9'd466
+50Hz M5:V30 ODD        0    0    0    0    0    0    0    1    1     111010001 9'h1D1 9'd465
+50Hz M4:--- EVEN       0    1    0    1    0    1    1    0    0     110111010 9'h1BA 9'd442
+50Hz M4:--- ODD        0    1    0    1    0    1    0    1    1     110111001 9'h1B9 9'd441
+
+!! = can't happen in practice (no PLA entry to trigger it)

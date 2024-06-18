@@ -1,0 +1,10 @@
+// H counter is multiple of 16px + 13px (starting from 0)
+// Happens 16 times in H32, 20 times in H40
+
+	assign w510 = pla_hcnt2[2] | pla_hcnt2[3];
+
+	assign pla_hcnt2[3] = reg_m5 &           (l106 & 9'd271) == 9'd13;
+	   // 13, 29, 45, 61, 77, 93, 109, 125
+	   // 141, 157, 173, 189, 205, 221, 237, 253
+	assign pla_hcnt2[2] = reg_m5 & reg_rs1 & (l106 & 9'd463) == 9'd269;
+	   // 269, 285, 301, 317

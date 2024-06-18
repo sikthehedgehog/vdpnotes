@@ -1,0 +1,5 @@
+// Line 511 (low logic)
+
+	assign w475 = ~pla_vcnt[0];
+
+	assign pla_vcnt[0] = l105 == 9'd511;

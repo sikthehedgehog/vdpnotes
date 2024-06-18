@@ -1,0 +1,15 @@
+// V counter wraparound point
+
+	assign w467 = pla_vcnt[41] | pla_vcnt[42] | pla_vcnt[43]
+		| pla_vcnt[44] | pla_vcnt[45] | pla_vcnt[46] | pla_vcnt[47];
+
+	// 60Hz
+	assign pla_vcnt[46] = ~cpu_pal & w107 & l105 == 9'd234;                 // V28 60Hz
+	assign pla_vcnt[47] = ~cpu_pal & ~reg_m5 & l105 == 9'd218;              // M4 60Hz
+
+	// 50Hz
+	assign pla_vcnt[44] = ~reg_lsm0 & cpu_pal & w107 & l105 == 9'd258;      // V28 50Hz ~IM
+	assign pla_vcnt[42] = reg_lsm0 & cpu_pal & w107 & l105 == 9'd257;       // V28 50Hz IM
+	assign pla_vcnt[43] = ~reg_lsm0 & cpu_pal & w108 & l105 == 9'd266;      // V30 50Hz ~IM
+	assign pla_vcnt[41] = reg_lsm0 & cpu_pal & w108 & l105 == 9'd265;       // V30 50Hz IM
+	assign pla_vcnt[45] = ~reg_lsm0 & cpu_pal & ~reg_m5 & l105 == 9'd242;   // M4 50Hz ~IM

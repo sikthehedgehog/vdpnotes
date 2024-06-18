@@ -1,0 +1,4 @@
+	assign w503 = pla_hcnt2[15] | pla_hcnt2[16];
+
+	assign pla_hcnt2[16] = ~reg_rs1 & l106 == 9'd95;   // H32
+	assign pla_hcnt2[15] = reg_rs1 & l106 == 9'd120;   // H40

@@ -1,0 +1,13 @@
+// Lines up with sprite X/tile ID fetches in mode 4 in active scan
+// What is it doing in passive scan though?
+
+	assign w485 = pla_hcnt1[36] | pla_hcnt1[37] | pla_hcnt1[38] | pla_hcnt1[39]
+		| pla_hcnt1[43];
+
+	assign pla_hcnt1[39] = w466 & ~reg_m5 & (l106 & 9'd509) == 9'd264; // 264,266
+	assign pla_hcnt1[38] = w466 & ~reg_m5 & (l106 & 9'd509) == 9'd276; // 276,278
+	assign pla_hcnt1[37] = w466 & ~reg_m5 & (l106 & 9'd509) == 9'd468; // 468,470
+	assign pla_hcnt1[36] = w466 & ~reg_m5 & (l106 & 9'd509) == 9'd480; // 480,482
+	
+	assign pla_hcnt1[43] = ~w466 & (l106 & 9'd259) == 9'd0;
+	   // 0, 4, 8, 12, 16, 20, 24, 28, 32, 36, ... 252

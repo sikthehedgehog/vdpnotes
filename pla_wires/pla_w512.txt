@@ -1,0 +1,3 @@
+	assign w512 = pla_hcnt2[0];
+
+	assign pla_hcnt2[0] = (l106 & 9'd15) == 9'd3;

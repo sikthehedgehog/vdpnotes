@@ -1,0 +1,6 @@
+// Lines up with the last value before H counter wraparound minus 1?
+
+	assign w490 = pla_hcnt2[44] | pla_hcnt2[45];
+
+	assign pla_hcnt2[45] = ~reg_rs1 & l106 == 9'd294;  // H32: 256 + 38
+	assign pla_hcnt2[44] = reg_rs1 & l106 == 9'd363;   // H40: 320 + 43

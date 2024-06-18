@@ -1,0 +1,42 @@
+// This seems to control sprite fetch timing
+
+	assign w482 = pla_hcnt1[7] | pla_hcnt1[8] | pla_hcnt1[9] | pla_hcnt1[10]
+		| pla_hcnt1[11] | pla_hcnt1[12] | pla_hcnt1[13] | pla_hcnt1[14]
+		| pla_hcnt1[15] | pla_hcnt1[16] | pla_hcnt1[17] | pla_hcnt1[18]
+		| pla_hcnt1[19] | pla_hcnt1[20] | pla_hcnt1[21] | pla_hcnt1[22]
+		| pla_hcnt1[24] | pla_hcnt1[25] | pla_hcnt1[26] | pla_hcnt1[27]
+		| pla_hcnt1[32] | pla_hcnt1[33] | pla_hcnt1[34] | pla_hcnt1[35];
+
+   // Triggers 40 times in H40
+	assign pla_hcnt1[16] = w466 &         reg_m5 &  reg_rs1 & (l106 & 9'd509) == 9'd324; // 324,326
+	assign pla_hcnt1[15] = w466 &         reg_m5 &  reg_rs1 & (l106 & 9'd505) == 9'd328; // 328,330,332,334
+	assign pla_hcnt1[14] = w466 &         reg_m5 &  reg_rs1 & (l106 & 9'd505) == 9'd336; // 336,338,340,342
+	assign pla_hcnt1[10] = w466 & ~w425 & reg_m5 &  reg_rs1 & (l106 & 9'd505) == 9'd344; // 344,346,348,350
+	assign pla_hcnt1[13] = w466 & ~w416 & reg_m5 &  reg_rs1 & (l106 & 9'd505) == 9'd352; // 352,354,356,358
+	assign pla_hcnt1[12] = w466 & ~w416 & reg_m5 &  reg_rs1 & (l106 & 9'd509) == 9'd360; // 360,362
+	assign pla_hcnt1[11] = w466 & ~w416 & reg_m5 &  reg_rs1 & l106            == 9'd364;
+	assign pla_hcnt1[9]  = w466 &         reg_m5 &  reg_rs1 & l106            == 9'd458;
+	assign pla_hcnt1[8]  = w466 &         reg_m5 &  reg_rs1 & l106            == 9'd460;
+	assign pla_hcnt1[27] = w466 &         reg_m5 &            (l106 & 9'd497) == 9'd464; // 464,466,468,470,472,474,476,478
+	assign pla_hcnt1[26] = w466 &         reg_m5 &            (l106 & 9'd509) == 9'd480; // 480,482
+	assign pla_hcnt1[7]  = w466 &         reg_m5 &  reg_rs1 & l106            == 9'd484;
+	assign pla_hcnt1[25] = w466 &         reg_m5 &            (l106 & 9'd505) == 9'd488; // 488,490,492,494
+	assign pla_hcnt1[24] = w466 &         reg_m5 &            (l106 & 9'd503) == 9'd498; // 498,506
+	
+	// Triggers 32 times in H32 (464 can't happen)
+	assign pla_hcnt1[21] = w466 &         reg_m5 & ~reg_rs1 & (l106 & 9'd509) == 9'd260; // 260,262
+	assign pla_hcnt1[20] = w466 &         reg_m5 & ~reg_rs1 & (l106 & 9'd505) == 9'd264; // 264,266,268,270
+	assign pla_hcnt1[22] = w466 &         reg_m5 & ~reg_rs1 & (l106 & 9'd505) == 9'd272; // 272,274,276,278
+	assign pla_hcnt1[19] = w466 & ~w425 & reg_m5 & ~reg_rs1 & (l106 & 9'd505) == 9'd280; // 280,282,284,286
+	assign pla_hcnt1[17] = w466 & ~w416 & reg_m5 & ~reg_rs1 & l106            == 9'd290;
+	assign pla_hcnt1[18] = w466 & ~w416 & reg_m5 & ~reg_rs1 & (l106 & 9'd509) == 9'd292; // 292,294
+	assign pla_hcnt1[27] = w466 &         reg_m5 &            (l106 & 9'd497) == 9'd464; // 464,466,468,470,472,474,476,478
+	assign pla_hcnt1[26] = w466 &         reg_m5 &            (l106 & 9'd509) == 9'd480; // 480,482
+	assign pla_hcnt1[25] = w466 &         reg_m5 &            (l106 & 9'd505) == 9'd488; // 488,490,492,494
+	assign pla_hcnt1[24] = w466 &         reg_m5 &            (l106 & 9'd503) == 9'd498; // 498,506
+	
+	// Triggers 8 times in mode 4
+	assign pla_hcnt1[35] = w466 & ~reg_m5 & (l106 & 9'd509) == 9'd268; // 268,270
+	assign pla_hcnt1[34] = w466 & ~reg_m5 & (l106 & 9'd509) == 9'd280; // 280,282
+	assign pla_hcnt1[33] = w466 & ~reg_m5 & (l106 & 9'd509) == 9'd472; // 472,474
+	assign pla_hcnt1[32] = w466 & ~reg_m5 & (l106 & 9'd509) == 9'd484; // 484,486

@@ -1,0 +1,5 @@
+	assign w502 = ~(pla_hcnt2[17] | pla_hcnt2[18] | pla_hcnt2[19]);
+
+	assign pla_hcnt2[18] = reg_m5 & ~reg_rs1 & l106 == 9'd264;  // M5 H32   // 256 + 8
+	assign pla_hcnt2[17] = reg_m5 & reg_rs1 & l106 == 9'd328;   // M5 H40   // 320 + 8
+	assign pla_hcnt2[19] = ~reg_m5 & l106 == 9'd488;            // M4

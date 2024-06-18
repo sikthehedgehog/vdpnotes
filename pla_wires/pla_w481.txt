@@ -1,0 +1,16 @@
+// Sprite X and tile ID fetches
+
+	assign w481 = pla_hcnt1[5] | pla_hcnt1[6] | pla_hcnt1[36] |
+		pla_hcnt1[37] | pla_hcnt1[38] | pla_hcnt1[39];
+
+   // Triggers 16 times in H32
+   // Triggers 20 times in H40
+	assign pla_hcnt1[6]  = w466 &  reg_m5 &           (l106 & 9'd271) == 9'd10;  // 10,26,42,58,74,90,106,122,
+	                                                                             // 138,154,170,186,202,218,234,250
+	assign pla_hcnt1[5]  = w466 &  reg_m5 & reg_rs1 & (l106 & 9'd463) == 9'd266; // 266,282,298,314
+	
+   // Triggers 8 times in mode 4
+	assign pla_hcnt1[39] = w466 & ~reg_m5 &           (l106 & 9'd509) == 9'd264; // 264,266
+	assign pla_hcnt1[38] = w466 & ~reg_m5 &           (l106 & 9'd509) == 9'd276; // 276,278
+	assign pla_hcnt1[37] = w466 & ~reg_m5 &           (l106 & 9'd509) == 9'd468; // 468,470
+	assign pla_hcnt1[36] = w466 & ~reg_m5 &           (l106 & 9'd509) == 9'd480; // 480,482

@@ -1,0 +1,20 @@
+// To-do: figure out what w403 is
+// Seems to line up with sprite Y fetches in mode 4
+// Triggers 32 times in mode 4
+
+	assign w486 = w403 | pla_hcnt1[40] | pla_hcnt1[41] | pla_hcnt1[42];
+
+	assign pla_hcnt1[40] = w466 & ~reg_m5 & (l106 & 9'd279) == 9'd18;  // 18,26,50,58,82,90,114,122
+	                                                                   // 146,154,178,186,210,218,242,250
+	assign pla_hcnt1[41] = w466 & ~reg_m5 & (l106 & 9'd287) == 9'd10;  // 10,42,74,106,138,170,202,234
+	assign pla_hcnt1[42] = w466 & ~reg_m5 & (l106 & 9'd497) == 9'd496; // 496,498,500,502,504,506,508,510
+
+
+// A = pla_hcnt1[40]
+// B = pla_hcnt1[41]
+// C = pla_hcnt1[42]
+-----------------------------------CCCCCCCC
+-----B---A---A-------B---A---A--
+-----B---A---A-------B---A---A--
+-----B---A---A-------B---A---A--
+-----B---A---A-------B---A---A--

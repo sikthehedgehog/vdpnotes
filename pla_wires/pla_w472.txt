@@ -1,0 +1,18 @@
+// VSync (always 3 lines before w473)
+
+	assign w472 = pla_vcnt[17] | pla_vcnt[18] | pla_vcnt[19] | pla_vcnt[20]
+		| pla_vcnt[21] | pla_vcnt[22] | pla_vcnt[23] | pla_vcnt[24];
+
+	assign pla_vcnt[23] = ~w446 & ~cpu_pal &  w107   & l105 == 9'd485; // 60Hz V28 EVEN
+	assign pla_vcnt[19] =  w446 & ~cpu_pal &  w107   & l105 == 9'd484; // 60Hz V28 ODD
+	assign pla_vcnt[24] = ~w446 & ~cpu_pal & ~reg_m5 & l105 == 9'd469; // 60Hz M4  EVEN
+
+	assign pla_vcnt[21] = ~w446 &  cpu_pal &  w107   & l105 == 9'd458; // 50Hz V28 EVEN
+	assign pla_vcnt[18] =  w446 &  cpu_pal &  w107   & l105 == 9'd457; // 50Hz V28 ODD
+	assign pla_vcnt[20] = ~w446 &  cpu_pal &  w108   & l105 == 9'd466; // 50Hz V30 EVEN
+	assign pla_vcnt[17] =  w446 &  cpu_pal &  w108   & l105 == 9'd465; // 50Hz V30 ODD
+	assign pla_vcnt[22] = ~w446 &  cpu_pal & ~reg_m5 & l105 == 9'd442; // 50Hz M4  EVEN
+
+//w107 = V28
+//w108 = V30
+//w446 = ODD

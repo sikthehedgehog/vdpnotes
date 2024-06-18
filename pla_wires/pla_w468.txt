@@ -1,0 +1,5 @@
+// End of vblank (low logic)
+
+	assign w468 = ~pla_vcnt[40];
+
+	assign pla_vcnt[40] = l105 == 9'd0;

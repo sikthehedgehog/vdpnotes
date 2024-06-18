@@ -1,0 +1,7 @@
+// Seems to be when VSRAM is read in full vscroll mode?
+// Also seems to be the point where the F flag becomes 0
+
+	assign w505 = ~(pla_hcnt2[12] | pla_hcnt2[13]);
+
+	assign pla_hcnt2[12] = reg_rs1 & l106 == 9'd322;
+	assign pla_hcnt2[13] = ~reg_rs1 & l106 == 9'd258;
