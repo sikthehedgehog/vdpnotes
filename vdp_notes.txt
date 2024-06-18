@@ -1,6 +1,7 @@
 w1       68000 read (any size)
 w2       Address == ($0xxxxx or $8xxxxx) and no CPU interrupt acknowledge (w35)?
-w4       Finish DMA transfer (from l48, adds RESET too)
+w4       Release 68000 bus (used by DMA)
+w5       Request 68000 bus (used by DMA)
 w9       Set when any interrupt pending
 w11      IRQ number to assert (bit 1)
 w12      IRQ number to assert (bit 2)
@@ -23,7 +24,7 @@ w60      Set to trigger vblank interrupt
 w61      Allow DMA flag
 w62      Start DMA transfer
 w63      Start DMA copy or fill
-w64      ~t3
+w64      Assert BGACK (high logic)
 w65      Swap status port bits 1:0 with 9:8 (req: SMS mode, mode 5, mirror status port, wtf?)
 w70      68k within VDP address range (address must be 110xx000 xxxxxxxx 000xxxxx)
 w71      Output extra V and H counter bits over CPU data bus (test feature, SMS mode only)
@@ -83,10 +84,12 @@ w133     Write enable for PSG (MD mode)
 w134     Read enable for latched V counter // Read enable for HV counter (MD mode)
 w135     Read enable for debug register (MD mode)
 w136     End of DMA transfer (or reset)
+w137     Assert /DTACK on writing upper byte of a command (is this logic to halt CPU on DMA transfer?)
 w139     Write enable for DATA/CTRL
 w140     Write enable for DATA/CTRL (SMS mode)
 w141     Read enable for HV counter (SMS mode)
 w142     Read enable for latched H counter // Read enable for HV counter
+w143     Read enable for DATA? (used for t14 and t24)
 w144     (clears t18, seems related to CPU writes)
 w145     (sets t18, seems related to CPU writes)
 w146     Part of /DTACK logic (all this goes to w117)
@@ -473,6 +476,9 @@ w979     Line buffer write data priority (odd?)
 w980     Line buffer write data palette (odd?)
 w982     Line buffer write data priority (even?)
 w983     Line buffer write data palette (even?)
+w985     VRAM read enable (high logic)
+w986     VRAM lower byte write enable (high logic)
+w987     VRAM upper byte write enable (high logic)
 w1009    /YS signal (see w1082 too)
 w1010    Used for VRAM address computation (bit 1 in m5)
 w1011    Used for VRAM address computation (w1010 OR bit 9 in m4)
@@ -739,6 +745,7 @@ l629     Shadow color flag? (also see w1102)
 l630     Highlight color flag (see w1101/w1102 for normal/shadow)
 
 t2       "In DMA copy/fill" flag
+t3       BGACK (low logic)
 t4       "In DMA transfer" flag
 t5       Set when interrupt acknowledge arrives
 t7       Hblank interrupt pending
