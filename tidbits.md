@@ -1,6 +1,9 @@
-# VDP design tidbits
+# VDP implementation tidbits
 
+- There's no centralized way to access the VRAM bus, everything that needs it puts their address directly on it and the VDP relies on its timing signals to coordinate who has access to the bus.
 - DMA length is stored _inverted_, then incremented as DMA progresses. This probably saved some gates, I guess.
+- Sprite line buffer has a 8px wide data bus and VDP draws 8px at a time.
+- The F flag is the internal "vblank interrupt pending" flag exposed directly on the status port. There are also hblank and external interrupt pending flags, but those aren't visible from outside.
 
 ## Mode 4 implementation
 
