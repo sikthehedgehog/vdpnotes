@@ -166,8 +166,9 @@ w257     w256 when FIFO index == 1, sends entry's address to VRAM address bus
 w258     w256 when FIFO index == 0, sends entry's address to VRAM address bus
 w259     w256 when FIFO index == 3, sends entry's address to VRAM address bus
 w260     w256 when FIFO index == 2, sends entry's address to VRAM address bus
-w264     New FIFO read index?
+w264     Increment FIFO write(?) index
 w267     DMA in progress & reg_dmd[1] == 1 (DMA transfer)
+w269     Time to flush FIFO entry (free access slot and FIFO not empty) (to l49)
 w276     Lower byte FIFO write strobe (68000 bus)
 w277     Lower byte FIFO write (see l55..l58)
 w278     Upper byte FIFO write strobe (68000 bus)
@@ -182,8 +183,8 @@ w292     FIFO write enable for 4th slot? (w290 & l51 == 2'h3)
 w293     FIFO write enable for 1st slot? (w290 & l51 == 2'h0)
 w294     FIFO write enable for 2nd slot? (w290 & l51 == 2'h1)
 w295     ??? (related to FIFO full, l51 == {l54,l53})
-w296     Set when incrementing FIFO index by half entry
-w297     Set when incrementing FIFO index by one entry
+w296     Set when incrementing FIFO read index by half entry
+w297     Set when incrementing FIFO read index by one entry
 w299     ??? (VRAM address write enable? it's clocked too)
 w301     CD0 flag & doing an access?
 w302     CRAM write access? (lower byte)
@@ -549,7 +550,8 @@ dff32_l2 Pending vblank interrupt? (set by w60, reset by w49)
 l9       End of interrupt acknowledge (from w48, to l10)
 l10      End of interrupt acknowledge (from l9, to l11)
 l11      End of interrupt acknowledge (from l10)
-l18      Select between DATA and CTRL port
+l18      Select between DATA and CTRL port for writes
+l19      Select between DATA and CTRL port for reads (used by w143)
 l21      Latch pipeline during access to DATA/CTRL? (pipeline, from l22)
 l22      Latch pipeline during access to DATA/CTRL? (pipeline, from l23 to l21)
 l23      Latch pipeline during access to DATA/CTRL? (pipeline, from l24 to l22)
@@ -568,12 +570,12 @@ l43      Set when FIFO is full
 l46      Status port EMPT bit (0 = FIFO has data, 1 = FIFO is empty)
 l47      ??? (stores VRAM address bit 0)
 l48      Finish DMA transfer (from w244, to w4)
-l49      ??? (set to increment FIFO index, set when flushing FIFO)
+l49      Time to flush FIFO entry (free access slot and FIFO not empty) (from w269)
 l50      Selects between live flags and FIFO flags (for w316..w322)
-l51      FIFO read index? (2-bit)
-l52      FIFO write index (bit -1, yes "half" an entry)
-l53      FIFO write index (bit 0)
-l54      FIFO write index (bit 1)
+l51      FIFO write index (2-bit)
+l52      FIFO read index (bit -1, yes "half" an entry)
+l53      FIFO read index (bit 0)
+l54      FIFO read index (bit 1)
 l55      FIFO lower byte OK entry #3 (stores w277)
 l56      FIFO lower byte OK entry #2 (stores w277)
 l57      FIFO lower byte OK entry #1 (stores w277)
@@ -666,6 +668,7 @@ l192     Bits 7:0 of horizontal scroll in mode 5 for plane B
 l193     Horizontal scroll in mode 4 (copied from reg $08)
 l194     Bits 9:8 of horizontal scroll in mode 5 for plane A
 l195     Bits 9:8 of horizontal scroll in mode 5 for plane B
+l196     VRAM address output enable: bits 4:0 of plane A/B tile fetch
 l197     Fetching plane A (0) or plane B (1)?
 l198     Bit 1 of plane A/B tile address to fetch (inverted)
 l202     [???] (there's window tilemap fetch on VRAM bus)
