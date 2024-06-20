@@ -12,6 +12,11 @@
 - There's no centralized register file, instead internally there's an "enable" for each latch spread all over the VDP.
 - The register number is decoded in two parts. First bits 4:3 are decoded (`00`, `01`, `01` if mode 5 only, `11` if mode 5 only) and then bits 2:0 separately (eight different lines), a combination of those two is then used to detect the individual registers. The "if mode 5 only" check is used to lock out registers `$0B` onwards (VDP will ignore those writes in mode 4).
 
+## DMA operation
+
+- Internally, length is stored _inverted_ (NOT'd) and then incremented until all bits are set. End result is the same, it probably saved a few gates.
+- Usually, during memory writes the CD flags stored in the FIFO are used. DMA fill uses the live command flags however (makes sense, since fill doesn't use the FIFO, though not sure where the fill data comes from yet).
+
 ## Sprite system
 
 - Sprite line buffer has a 8px wide data bus and VDP draws 8px at a time.

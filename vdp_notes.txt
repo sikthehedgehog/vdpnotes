@@ -84,7 +84,8 @@ w133     Write enable for PSG (MD mode)
 w134     Read enable for latched V counter // Read enable for HV counter (MD mode)
 w135     Read enable for debug register (MD mode)
 w136     End of DMA transfer (or reset)
-w137     Assert /DTACK on writing upper byte of a command (is this logic to halt CPU on DMA transfer?)
+w137     Assert /DTACK (seems logic for halting on DMA transfers and for halting on reads)
+w138     Seems to be set when data is available to read
 w139     Write enable for DATA/CTRL
 w140     Write enable for DATA/CTRL (SMS mode)
 w141     Read enable for HV counter (SMS mode)
@@ -97,7 +98,7 @@ w147     CPU strobe (either upper or lower)
 w151     (low logic) VRAM data output strobe
 w155     Select high word for next command write?
 w156     FIFO empty or end of DMA
-w159     ??? (something to do with end of access latch, maybe?)
+w159     ??? (something to do with end of access latch, maybe? part of what triggers autoincrement)
 w160     Read enable for DATA
 w163     Access to DATA/CTRL
 w164     Write command bits 15:8
@@ -151,7 +152,7 @@ w232     Register 01110 ($0E) write enable
 w233     Register 01101 ($0D) write enable
 w234     Increment DMA source and decrement length by 256 (if reg_test0[1] == 1)
 w235     Increment DMA source and decrement length by 1 (if reg_test0[1] == 0)
-w244     End of DMA transfer, 1 iteration early? ([???] reg_lg == 16'hfffe & w250)
+w244     End of DMA transfer, 1 iteration early?
 w245     DMA in progress & reg_dmd == 2'h3 (DMA copy)
 w246     DMA in progress & reg_dmd == 2'h1 (DMA transfer from RAM)
 w247     DMA in progress & reg_dmd == 2'h0 (DMA transfer from ROM)
@@ -166,9 +167,15 @@ w257     w256 when FIFO index == 1, sends entry's address to VRAM address bus
 w258     w256 when FIFO index == 0, sends entry's address to VRAM address bus
 w259     w256 when FIFO index == 3, sends entry's address to VRAM address bus
 w260     w256 when FIFO index == 2, sends entry's address to VRAM address bus
+w263     Set when DMA fill and FIFO empty
 w264     Increment FIFO write(?) index
 w267     DMA in progress & reg_dmd[1] == 1 (DMA transfer)
 w269     Time to flush FIFO entry (free access slot and FIFO not empty) (to l49)
+w270     Clears t28 when DMA is over
+w271     Sets t28 when a FIFO flush happens while in DMA
+w272     [?] Set when DMA fill can proceed? (after the initial write is done) (goes to l50)
+w273     68000 and 64KB VRAM and CD2:1 == 0 (not CRAM or VSRAM)
+w274     68000 and 64KB VRAM
 w276     Lower byte FIFO write strobe (68000 bus)
 w277     Lower byte FIFO write (see l55..l58)
 w278     Upper byte FIFO write strobe (68000 bus)
@@ -210,6 +217,7 @@ w322     CD0 from FIFO in mode 5 or CD0 always high in mode 4
 w323     lower & (CD3:0 == 0101) (VSRAM write select lower?) (goes to l207)
 w324     upper & (CD3:0 == 0101) (VSRAM write select upper?) (goes to l208)
 w325     CD2:1 == 00 (VRAM select) (either live or FIFO, depending on l50)
+w332     Upper XOR lower valid byte in FIFO (*not* both)
 w333     Set to swap low byte of HV counter port (used to accomodate Z80 bus)
 w334     H counter latch freerunning mode
 w335     External interrupt pulse (one cycle long!) (goes to l81)
@@ -571,7 +579,7 @@ l46      Status port EMPT bit (0 = FIFO has data, 1 = FIFO is empty)
 l47      ??? (stores VRAM address bit 0)
 l48      Finish DMA transfer (from w244, to w4)
 l49      Time to flush FIFO entry (free access slot and FIFO not empty) (from w269)
-l50      Selects between live flags and FIFO flags (for w316..w322)
+l50      Selects between live flags and FIFO flags (used during DMA fill) (from w272)
 l51      FIFO write index (2-bit)
 l52      FIFO read index (bit -1, yes "half" an entry)
 l53      FIFO read index (bit 0)
@@ -722,6 +730,14 @@ l527     Line buffer write data color #4
 l528     Line buffer write data color #5
 l529     Line buffer write data color #6
 l530     Line buffer write data color #7
+l538     Line buffer write enable pixel #0 (from w910, before clock)
+l539     Line buffer write enable pixel #1 (from w911, before clock)
+l540     Line buffer write enable pixel #2 (from w912, before clock)
+l541     Line buffer write enable pixel #3 (from w913, before clock)
+l542     Line buffer write enable pixel #4 (from w914, before clock)
+l543     Line buffer write enable pixel #5 (from w915, before clock)
+l544     Line buffer write enable pixel #6 (from w916, before clock)
+l545     Line buffer write enable pixel #7 (from w917, before clock)
 l553     [???] (somehow related to w970 and l556, part of a delay line?)
 l554     [???] (somehow related to w971 and l557, part of a delay line?)
 l555     [???] (somehow related to w972 and l558, part of a delay line?)
@@ -747,6 +763,7 @@ l628     Blue color output (0..7)
 l629     Shadow color flag? (also see w1102)
 l630     Highlight color flag (see w1101/w1102 for normal/shadow)
 
+t1       Set when writing reg $17 with DMD1=0, clear when CPU bus grant (or reset)
 t2       "In DMA copy/fill" flag
 t3       BGACK (low logic)
 t4       "In DMA transfer" flag
@@ -758,12 +775,14 @@ t10      Status port SOVR bit
 t11      Status port C bit
 t12      ??? (set by w120, reset by w121)
 t13      Sets the latch pipeline during access to DATA/CTRL (I think?)
+t14      Seems to be set while VDP is waiting for data from VRAM/CRAM/VSRAM to be latched on a read
 t15      Which command byte to write next in SMS mode? (t16 gated by w154?)
 t16      Which command byte to write next in SMS mode?
 t18      Which command word to write next? (0: low, 1: high)
 t19      CPU upper byte strobe (set by UDS, clear by w189)
 t20      CPU lower byte strobe (set by LDS, clear by w189)
 t25      Writing command bits 15:8 (set by w164, clear by w176)
+t28      Set when a FIFO entry is flushed during DMA, reset when DMA finishes
 t30      hblank? (later delayed by 1 in m4, by 2 in m5)
 t32      hsync (equalization pulses, later delayed by 1 in m4, by 2 in m5)
 t33      hsync (normal hsync, later delayed by 1 in m4, by 2 in m5)
