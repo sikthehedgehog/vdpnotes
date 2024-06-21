@@ -96,6 +96,7 @@ w145     (sets t18, seems related to CPU writes)
 w146     Part of /DTACK logic (all this goes to w117)
 w147     CPU strobe (either upper or lower)
 w151     (low logic) VRAM data output strobe
+w153     DATA/CTRL access strobe for w150
 w155     Select high word for next command write?
 w156     FIFO empty or end of DMA
 w159     ??? (something to do with end of access latch, maybe? part of what triggers autoincrement)
@@ -168,7 +169,7 @@ w258     w256 when FIFO index == 0, sends entry's address to VRAM address bus
 w259     w256 when FIFO index == 3, sends entry's address to VRAM address bus
 w260     w256 when FIFO index == 2, sends entry's address to VRAM address bus
 w263     Set when DMA fill and FIFO empty
-w264     Increment FIFO write(?) index
+w264     Increment FIFO write(?) index; data write (through DATA port access or DMA transfer)
 w267     DMA in progress & reg_dmd[1] == 1 (DMA transfer)
 w269     Time to flush FIFO entry (free access slot and FIFO not empty) (to l49)
 w270     Clears t28 when DMA is over
@@ -303,7 +304,7 @@ w472     V Timing signal: start of vsync (always 3 lines before w473)
 w473     V Timing signal: end of vsync / start of top TV vblank
 w474     V Timing signal: ??? (always 3 lines after w473, end of the extra sync pulses maybe?)
 w475     V Timing signal: (low logic) line 511
-w476     H Timing signal: refresh slot
+w476     H Timing signal: refresh slot (goes to l108)
 w477     H Timing signal: fetch plane A tilemap data
 w478     H Timing signal: fetch plane B tilemap data
 w479     H Timing signal: fetch plane A or B tile data (1st half)
@@ -555,9 +556,14 @@ dff30_l2 Pending external interrupt? (set by w58, reset by w49)
 dff31_l2 Pending hblank interrupt? (set by w57, reset by w49)
 dff32_l2 Pending vblank interrupt? (set by w60, reset by w49)
 
+l1       H Timing signal: refresh slot (from l108, introduces 2 cycles of latency)
+l2       H Timing signal: refresh slot (from l1, introduces 3 cycles of latency)
+l3       H Timing signal: refresh slot (from l2, introduces 4 cycles of latency)
 l9       End of interrupt acknowledge (from w48, to l10)
 l10      End of interrupt acknowledge (from l9, to l11)
 l11      End of interrupt acknowledge (from l10)
+l12      [has another use with w51] Used to reset t6 two cycles after it's set (t6 -> l12 -> l13)
+l13      [has another use with w52] Used to reset t6 two cycles after it's set (t6 -> l12 -> l13)
 l18      Select between DATA and CTRL port for writes
 l19      Select between DATA and CTRL port for reads (used by w143)
 l21      Latch pipeline during access to DATA/CTRL? (pipeline, from l22)
@@ -574,6 +580,7 @@ l36      FIFO address entry #1 (17-bit)
 l37      FIFO address entry #0 (17-bit)
 l38      FIFO address entry #3 (17-bit)
 l39      FIFO address entry #2 (17-bit)
+l40      (used to ensure that the w18 pulse is stable)
 l43      Set when FIFO is full
 l46      Status port EMPT bit (0 = FIFO has data, 1 = FIFO is empty)
 l47      ??? (stores VRAM address bit 0)
@@ -667,6 +674,7 @@ l178     Bit 3 of H counter (related to tilemap fetches?)
 l179     Register $09 (mode 4 vscroll)
 l181     Data to write to VSRAM
 l182     Data to write to VSRAM (bits 10:8, goes to l181)
+l184     VScroll value to work with (VSRAM output in mode 5, register $09 in mode 4) (from w515, latched when w517)
 l187     Latches window left/right split select (copied from reg $11 on w542)
 l188     Latches window X split position (copied from reg $11 on w542)
 l189     Latches window up/down split select (copied from reg $12 on w544)
@@ -781,6 +789,7 @@ t16      Which command byte to write next in SMS mode?
 t18      Which command word to write next? (0: low, 1: high)
 t19      CPU upper byte strobe (set by UDS, clear by w189)
 t20      CPU lower byte strobe (set by LDS, clear by w189)
+t21      In the middle of a DATA port write
 t25      Writing command bits 15:8 (set by w164, clear by w176)
 t28      Set when a FIFO entry is flushed during DMA, reset when DMA finishes
 t30      hblank? (later delayed by 1 in m4, by 2 in m5)
