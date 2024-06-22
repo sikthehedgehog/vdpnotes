@@ -117,6 +117,7 @@ w174     Select low byte for next command write (SMS mode) (same as w170 but wit
 w175     Select low word for next command write? (same as w171 but with RESET thrown in)
 w176     Select high word for next command write? (same as w155 but with RESET thrown in)
 w182     CD5 flag (actually combinatorial and not a latch)
+w183     (edge detects a DATA/CTRL access, l21/l22)
 w184     ??? Yet another DATA/CTRL access detect? (used by w193 when detecting register writes)
 w185     Selects between current (1) or autoincremented (0) address
 w186     (part of the logic for w187 and w188, latched through l27)
@@ -175,8 +176,9 @@ w258     w256 when FIFO index == 0, sends entry's address to VRAM address bus
 w259     w256 when FIFO index == 3, sends entry's address to VRAM address bus
 w260     w256 when FIFO index == 2, sends entry's address to VRAM address bus
 w263     Set when DMA fill and FIFO empty
-w264     Increment FIFO write(?) index; data write (through DATA port access or DMA transfer)
+w264     Increment FIFO write index; data write (through DATA port access or DMA transfer)
 w267     DMA in progress & reg_dmd[1] == 1 (DMA transfer) (to l5)
+w268     Set to output data from FIFO to data bus
 w269     Time to flush FIFO entry (free access slot and FIFO not empty) (to l49)
 w270     Clears t28 when DMA is over
 w271     Sets t28 when a FIFO flush happens while in DMA
@@ -230,6 +232,10 @@ w322     CD0 from FIFO in mode 5 or CD0 always high in mode 4
 w323     Live/FIFO CD flags: VSRAM write (CD3:0 == 0101) and lower byte (goes to l207)
 w324     Live/FIFO CD flags: VSRAM write (CD3:0 == 0101) and upper byte (goes to l208)
 w325     CD2:1 == 00 (VRAM select) (either live or FIFO, depending on l50)
+w326     Sends FIFO entry #0 to VRAM data bus
+w327     Sends FIFO entry #1 to VRAM data bus
+w328     Sends FIFO entry #2 to VRAM data bus
+w329     Sends FIFO entry #3 to VRAM data bus
 w332     Upper XOR lower valid byte in FIFO (*not* both)
 w333     Set to swap low byte of HV counter port (used to accomodate Z80 bus)
 w334     H counter latch freerunning mode
@@ -249,6 +255,10 @@ w347     Select what to put in low byte when reading HV counter
 w348     Lower byte of a DATA read (latched in l92)
 w349     Upper byte of a DATA read (latched in l93)
 w350     Selects source of upper byte for command write (depending on CPU type)
+w351     When outputting to VRAM data bus, selects byte for FIFO entry #0 data (lower byte)
+w352     When outputting to VRAM data bus, selects byte for FIFO entry #1 data (lower byte)
+w353     When outputting to VRAM data bus, selects byte for FIFO entry #2 data (lower byte)
+w354     When outputting to VRAM data bus, selects byte for FIFO entry #3 data (lower byte)
 w355     Logical Y coordinate
 w356     reg_test1[6:4] == 3'h1 OR 3'h0 and time for plane A tilemap fetch
 w357     reg_test1[6:4] == 3'h1
@@ -643,6 +653,16 @@ l90      Frozen V counter (exposed over $C00008)
 l91      Frozen H counter (exposed over $C00009)
 l92      Lower byte of a DATA read (latched from w348)
 l93      Upper byte of a DATA read (latched from w349)
+l94      Value to write to FIFO entry data (upper byte)
+l95      Value to write to FIFO entry data (lower byte)
+l96      FIFO entry #0 data (upper byte)
+l97      FIFO entry #0 data (lower byte)
+l98      FIFO entry #1 data (upper byte)
+l99      FIFO entry #1 data (lower byte)
+l100     FIFO entry #2 data (upper byte)
+l101     FIFO entry #2 data (lower byte)
+l102     FIFO entry #3 data (upper byte)
+l103     FIFO entry #3 data (lower byte)
 l104     ??? (latch for data to write? used in a lot of places)
 l105     V counter
 l106     H counter
