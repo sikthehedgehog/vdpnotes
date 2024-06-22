@@ -2,6 +2,9 @@ w1       68000 read (any size)
 w2       Address == ($0xxxxx or $8xxxxx) and no CPU interrupt acknowledge (w35)?
 w4       Release 68000 bus (used by DMA)
 w5       Request 68000 bus (used by DMA)
+w6       Clear during the 2nd and 4th cycle of a refresh slot
+w7       Set during the 2nd and 4th cycle of a refresh slot if FIFO is not full
+w8       Set while in DMA transfer (after it has been going for at least 1 cycle)
 w9       Set when any interrupt pending
 w11      IRQ number to assert (bit 1)
 w12      IRQ number to assert (bit 2)
@@ -116,6 +119,9 @@ w176     Select high word for next command write? (same as w155 but with RESET t
 w182     CD5 flag (actually combinatorial and not a latch)
 w184     ??? Yet another DATA/CTRL access detect? (used by w193 when detecting register writes)
 w185     Selects between current (1) or autoincremented (0) address
+w186     (part of the logic for w187 and w188, latched through l27)
+w187     (not sure but seems to be when writes trigger inside DMA copy?)
+w188     (not sure but seems to be when writes trigger outside DMA copy?)
 w192     reg_code[1:0] != 2'h2 (not a register write)
 w193     Detected a register write? (pipelines to l31..l34,w205)
 w199     DMA copy in progress and CD4 set
@@ -170,7 +176,7 @@ w259     w256 when FIFO index == 3, sends entry's address to VRAM address bus
 w260     w256 when FIFO index == 2, sends entry's address to VRAM address bus
 w263     Set when DMA fill and FIFO empty
 w264     Increment FIFO write(?) index; data write (through DATA port access or DMA transfer)
-w267     DMA in progress & reg_dmd[1] == 1 (DMA transfer)
+w267     DMA in progress & reg_dmd[1] == 1 (DMA transfer) (to l5)
 w269     Time to flush FIFO entry (free access slot and FIFO not empty) (to l49)
 w270     Clears t28 when DMA is over
 w271     Sets t28 when a FIFO flush happens while in DMA
@@ -182,21 +188,27 @@ w277     Lower byte FIFO write (see l55..l58)
 w278     Upper byte FIFO write strobe (68000 bus)
 w279     Upper byte FIFO write (see l59..l63)
 w280     Which FIFO byte is being written (Z80 bus)
+w281     [?] DMA copy write to odd address?
+w282     [?] DMA copy write to even address?
+w283     [?] VRAM write to lower byte?
+w284     [?] VRAM write to upper byte?
 w285     Upper byte flag OR 64KB VRAM mode
+w286     [?] VRAM write to upper byte OR 64KB VRAM?
 w287     Lower byte flag AND 128KB VRAM mode
+w288     [?] VRAM write to lower byte AND 128KB VRAM?
 w289     Live/FIFO CD flags: VRAM write (CD3:0 == 0001)
 w290     FIFO write enable?
 w291     FIFO write enable for 3rd slot? (w290 & l51 == 2'h2)
 w292     FIFO write enable for 4th slot? (w290 & l51 == 2'h3)
 w293     FIFO write enable for 1st slot? (w290 & l51 == 2'h0)
 w294     FIFO write enable for 2nd slot? (w290 & l51 == 2'h1)
-w295     ??? (related to FIFO full, l51 == {l54,l53})
+w295     Both FIFO indices match, used to detect when FIFO becomes full or empty?
 w296     Set when incrementing FIFO read index by half entry
 w297     Set when incrementing FIFO read index by one entry
 w299     ??? (VRAM address write enable? it's clocked too)
 w301     CD0 flag & doing an access?
-w302     CRAM write access? (lower byte)
-w303     CRAM write access? (upper byte)
+w302     Live/FIFO CD flags: CRAM write (CD3:0 == 0011) and lower byte
+w303     Live/FIFO CD flags: CRAM write (CD3:0 == 0011) and upper byte
 w305     FIFO index increment size (0: by half entry, 1: by one entry)
 w306     Set when FIFO index == 3
 w307     Set when FIFO index == 2
@@ -215,8 +227,8 @@ w319     Live flag or FIFO upper byte flag for current entry
 w320     Live flag or FIFO CD3 flag for current entry
 w321     Live flag or FIFO CD0 flag for current entry
 w322     CD0 from FIFO in mode 5 or CD0 always high in mode 4
-w323     lower & (CD3:0 == 0101) (VSRAM write select lower?) (goes to l207)
-w324     upper & (CD3:0 == 0101) (VSRAM write select upper?) (goes to l208)
+w323     Live/FIFO CD flags: VSRAM write (CD3:0 == 0101) and lower byte (goes to l207)
+w324     Live/FIFO CD flags: VSRAM write (CD3:0 == 0101) and upper byte (goes to l208)
 w325     CD2:1 == 00 (VRAM select) (either live or FIFO, depending on l50)
 w332     Upper XOR lower valid byte in FIFO (*not* both)
 w333     Set to swap low byte of HV counter port (used to accomodate Z80 bus)
@@ -545,6 +557,7 @@ w1114    reg_test0[9] & reg_test0[11:10] != 2'h2 (PSG channel override: ch3)
 w1115    reg_test0[9] & reg_test0[11:10] != 2'h3 (PSG channel override: ch4)
 
 dff3_l2  DMA in progress
+dff22_l2 DMA transfer in progress (latched from t4)
 dff23_l2 ??? (bit 0 of some value, incremented by ~t3, reset by w41)
 dff24_l2 ??? (bit 1 of some value, incremented by ~t3, reset by w41)
 dff25_l2 ??? (bit 2 of some value, incremented by ~t3, reset by w41)
@@ -559,6 +572,8 @@ dff32_l2 Pending vblank interrupt? (set by w60, reset by w49)
 l1       H Timing signal: refresh slot (from l108, introduces 2 cycles of latency)
 l2       H Timing signal: refresh slot (from l1, introduces 3 cycles of latency)
 l3       H Timing signal: refresh slot (from l2, introduces 4 cycles of latency)
+l4       Set during a refresh slot for 4 cycles
+l5       Used to ensure that w267 is stable
 l9       End of interrupt acknowledge (from w48, to l10)
 l10      End of interrupt acknowledge (from l9, to l11)
 l11      End of interrupt acknowledge (from l10)
@@ -582,6 +597,7 @@ l38      FIFO address entry #3 (17-bit)
 l39      FIFO address entry #2 (17-bit)
 l40      (used to ensure that the w18 pulse is stable)
 l43      Set when FIFO is full
+l45      (used for rising edge detection of l44)
 l46      Status port EMPT bit (0 = FIFO has data, 1 = FIFO is empty)
 l47      ??? (stores VRAM address bit 0)
 l48      Finish DMA transfer (from w244, to w4)

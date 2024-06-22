@@ -12,6 +12,14 @@
 - There's no centralized register file, instead internally there's an "enable" for each latch spread all over the VDP.
 - The register number is decoded in two parts. First bits 4:3 are decoded (`00`, `01`, `01` if mode 5 only, `11` if mode 5 only) and then bits 2:0 separately (eight different lines), a combination of those two is then used to detect the individual registers. The "if mode 5 only" check is used to lock out registers `$0B` onwards (VDP will ignore those writes in mode 4).
 
+## FIFO
+
+- Byte writes go straight to the FIFO. Each FIFO entry has two flags to keep track of which bytes are valid (upper byte and lower byte flags). Both MD and SMS mode can issue byte writes.
+- The flushing mechanism accounts for both 8-bit and 16-bit VRAM buses by having an extra bit for the flush index. On 8-bit buses the whole index is incremented by +1, and on 16-bit buses it's incremented by +2.
+- FIFO FULL is set when the two indices are identical after a write, and reset when the indices stop being identical.
+- FIFO EMPTY is set when the two indices are identical after flushing, and reset when the indices stop being identical.
+- VDP reset forces the above flags to be EMPTY = 1 and FULL = 0.
+
 ## DMA operation
 
 - Internally, length is stored _inverted_ (NOT'd) and then incremented until all bits are set. End result is the same, it probably saved a few gates.
