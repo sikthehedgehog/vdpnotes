@@ -209,11 +209,11 @@ w299     ??? (VRAM address write enable? it's clocked too)
 w301     CD0 flag & doing an access?
 w302     Live/FIFO CD flags: CRAM write (CD3:0 == 0011) and lower byte
 w303     Live/FIFO CD flags: CRAM write (CD3:0 == 0011) and upper byte
-w305     FIFO index increment size (0: by half entry, 1: by one entry)
-w306     Set when FIFO index == 3
-w307     Set when FIFO index == 2
-w308     Set when FIFO index == 1
-w309     Set when FIFO index == 0
+w305     FIFO read index increment size (0: by half entry, 1: by one entry)
+w306     Set when FIFO read index == 3
+w307     Set when FIFO read index == 2
+w308     Set when FIFO read index == 1
+w309     Set when FIFO read index == 0
 w310     FIFO CD1 flag for current entry
 w311     FIFO lower byte flag for current entry
 w312     FIFO CD2 flag for current entry
