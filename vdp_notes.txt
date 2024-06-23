@@ -188,22 +188,22 @@ w274     68000 and 64KB VRAM
 w276     Lower byte FIFO write strobe (68000 bus)
 w277     Lower byte FIFO write (see l55..l58)
 w278     Upper byte FIFO write strobe (68000 bus)
-w279     Upper byte FIFO write (see l59..l63)
+w279     Upper byte FIFO write (see l59..l62)
 w280     Which FIFO byte is being written (Z80 bus)
 w281     [?] DMA copy write to odd address?
 w282     [?] DMA copy write to even address?
 w283     [?] VRAM write to lower byte?
 w284     [?] VRAM write to upper byte?
 w285     Upper byte flag OR 64KB VRAM mode
-w286     [?] VRAM write to upper byte OR 64KB VRAM?
+w286     VRAM write to upper byte (goes to VRAM interface block, see w991)
 w287     Lower byte flag AND 128KB VRAM mode
-w288     [?] VRAM write to lower byte AND 128KB VRAM?
+w288     VRAM write to lower byte (goes to VRAM interface block, see w999)
 w289     Live/FIFO CD flags: VRAM write (CD3:0 == 0001)
-w290     FIFO write enable?
-w291     FIFO write enable for 3rd slot? (w290 & l51 == 2'h2)
-w292     FIFO write enable for 4th slot? (w290 & l51 == 2'h3)
-w293     FIFO write enable for 1st slot? (w290 & l51 == 2'h0)
-w294     FIFO write enable for 2nd slot? (w290 & l51 == 2'h1)
+w290     FIFO write enable for data
+w291     FIFO write enable for 3rd slot data
+w292     FIFO write enable for 4th slot data
+w293     FIFO write enable for 1st slot data
+w294     FIFO write enable for 2nd slot data
 w295     Both FIFO indices match, used to detect when FIFO becomes full or empty?
 w296     Set when incrementing FIFO read index by half entry
 w297     Set when incrementing FIFO read index by one entry
@@ -211,6 +211,7 @@ w299     ??? (VRAM address write enable? it's clocked too)
 w301     CD0 flag & doing an access?
 w302     Live/FIFO CD flags: CRAM write (CD3:0 == 0011) and lower byte
 w303     Live/FIFO CD flags: CRAM write (CD3:0 == 0011) and upper byte
+w304     Updates l94 and l95 (the bytes that are used for FIFO writes)
 w305     FIFO read index increment size (0: by half entry, 1: by one entry)
 w306     Set when FIFO read index == 3
 w307     Set when FIFO read index == 2
@@ -232,10 +233,12 @@ w322     CD0 from FIFO in mode 5 or CD0 always high in mode 4
 w323     Live/FIFO CD flags: VSRAM write (CD3:0 == 0101) and lower byte (goes to l207)
 w324     Live/FIFO CD flags: VSRAM write (CD3:0 == 0101) and upper byte (goes to l208)
 w325     CD2:1 == 00 (VRAM select) (either live or FIFO, depending on l50)
-w326     Sends FIFO entry #0 to VRAM data bus
+w326     Sends FIFO entry #3 to VRAM data bus
 w327     Sends FIFO entry #1 to VRAM data bus
-w328     Sends FIFO entry #2 to VRAM data bus
-w329     Sends FIFO entry #3 to VRAM data bus
+w328     Sends FIFO entry #0 to VRAM data bus
+w329     Sends FIFO entry #2 to VRAM data bus
+w330     NOT (68000, 64KB VRAM, CD2:1==00, byte-sized FIFO entry)
+w331     Used to select what will go in the low byte of the VRAM write
 w332     Upper XOR lower valid byte in FIFO (*not* both)
 w333     Set to swap low byte of HV counter port (used to accomodate Z80 bus)
 w334     H counter latch freerunning mode
@@ -415,6 +418,10 @@ w656     Sprite height bit 1?
 w657     Sprite height bit 0?
 w663     Set if sprite height == 1 tile
 w664     Set if sprite height == 3 tiles
+w687     Set to latch 4th byte of cacheable sprite entry (link)
+w688     Set to latch 3rd byte of cacheable sprite entry (size)
+w689     Set to latch 1st byte of cacheable sprite entry (Y bits 9:8)
+w690     Set to latch 2nd byte of cacheable sprite entry (Y bits 7:0)
 w695     [???] SAT index to read?
 w696     Sprite index to access (to l398)
 w705     reg_test_18[6:5] == 2 (low logic) Use latched sprite [other] for w770
@@ -509,8 +516,10 @@ w980     Line buffer write data palette (odd?)
 w982     Line buffer write data priority (even?)
 w983     Line buffer write data palette (even?)
 w985     VRAM read enable (high logic)
-w986     VRAM lower byte write enable (high logic)
-w987     VRAM upper byte write enable (high logic)
+w986     VRAM lower byte write enable (high logic), goes to /WE0 (as low logic)
+w987     VRAM upper byte write enable (high logic), goes to /WE1 (as low logic)
+w991     VRAM write to upper byte (from w286, or l571 which is latched w286)
+w999     VRAM write to lower byte (from w288, or l585 which is latched w288)
 w1009    /YS signal (see w1082 too)
 w1010    Used for VRAM address computation (bit 1 in m5)
 w1011    Used for VRAM address computation (w1010 OR bit 9 in m4)
@@ -788,7 +797,9 @@ l555     [???] (somehow related to w972 and l558, part of a delay line?)
 l556     [???] (related to S/H?, latches w970's value)
 l557     [???] (related to S/H?, latches w971's value)
 l558     [???] (related to S/H?, latches w972's value)
+l571     VRAM write to upper byte (latched from w286, goes to w991)
 l574     (use unknown?) Free VRAM slot (CPU access allowed) (latched from l109)
+l585     VRAM write to lower byte (latched from w288, goes to w999)
 l592     Physical VRAM address (upper half, latched from w1012)
 l593     Physical VRAM address (lower half, latched from w1014)
 l603     Show sprite plane? (from w1044, goes to color bus)
