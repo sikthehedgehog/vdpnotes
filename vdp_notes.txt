@@ -116,6 +116,7 @@ w171     Select low word for next command write?
 w174     Select low byte for next command write (SMS mode) (same as w170 but with RESET thrown in)
 w175     Select low word for next command write? (same as w171 but with RESET thrown in)
 w176     Select high word for next command write? (same as w155 but with RESET thrown in)
+w178     CRAM read enable (goes to l623_1 -> l623_2 -> l623_3)
 w182     CD5 flag (actually combinatorial and not a latch)
 w183     (edge detects a DATA/CTRL access, l21/l22)
 w184     ??? Yet another DATA/CTRL access detect? (used by w193 when detecting register writes)
@@ -126,8 +127,8 @@ w188     (not sure but seems to be when writes trigger outside DMA copy?)
 w192     reg_code[1:0] != 2'h2 (not a register write)
 w193     Detected a register write? (pipelines to l31..l34,w205)
 w199     DMA copy in progress and CD4 set
-w201     ??? w189 & reg_code[3:2] == 2'h1 (CRAM)
-w202     ??? w189 & reg_code[3:2] == 2'h2 (VSRAM)
+w201     [not sure how w189 is involved but] Selected VSRAM for reading (goes to l206)
+w202     [not sure how w189 is involved but] Selected CRAM for reading
 w204     Reset command bits 23:16 (triggered by reset or mode 4)
 w205     Register write enable (from l31)
 w206     Register 00*** write enable
@@ -209,8 +210,8 @@ w296     Set when incrementing FIFO read index by half entry
 w297     Set when incrementing FIFO read index by one entry
 w299     ??? (VRAM address write enable? it's clocked too)
 w301     CD0 flag & doing an access?
-w302     CRAM write, upper byte (goes to l601)
-w303     CRAM write, lower byte (goes to l602)
+w302     CRAM write enable, upper byte (goes to l601)
+w303     CRAM write enable, lower byte (goes to l602)
 w304     Updates l94 and l95 (the bytes that are used for FIFO writes)
 w305     FIFO read index increment size (0: by half entry, 1: by one entry)
 w306     Set when FIFO read index == 3
@@ -357,6 +358,7 @@ w508     H Timing signal: H counter multiple of 16px + 15
 w510     H Timing signal: 3px after sprite X & tile ID fetch in mode 5 (to l145)
 w512     H Timing signal: H counter multiple of 16px + 3
 w515     VScroll value to work with (VSRAM output in mode 5, register $09 in mode 4)
+w516     Set to latch a VSRAM read into l180
 w519     Clear when vscroll inhibit should kick in, set otherwise
 w523     Set if plane A/B size is 32 tiles (reg_hsz == 2'h0)
 w524     Set if plane A/B size is 64 tiles (reg_hsz == 2'h1)
@@ -385,7 +387,7 @@ w562     Set if in viewport horizontally and in mode 4
 w563     Set if w562 and odd tile (H counter = multiple of 16px + 8px)
 w565     In viewport horizontally: current 16px column; in border: 4'b1111
 w568     H counter >= 320
-w569     Writing to CRAM or VSRAM
+w569     Set on VSRAM bus access
 w574     Set to latch hscroll for plane A in mode 5
 w575     Set to latch hscroll for plane B in mode 5
 w576     Bits 4:2 of plane A/B tile address to fetch before vflip
@@ -409,10 +411,14 @@ w619     [???] (set to latch 1st byte of something into l278, tile fetch?)
 w620     [???] (set to latch 2nd byte of something into l277, tile fetch?)
 w621     [???] (set to latch 3rd byte of something into l276, tile fetch?)
 w622     [???] (set to latch 4th byte of something into l275, tile fetch?)
-w625     Current vscroll column
+w623     NOT column vscroll (i.e. mode 5 full vscroll or mode 4)
+w624     Set if H counter is multiple of 16px if full vscroll, or if offset +8 if column vscroll
+w625     Vscroll column to read from VSRAM
 w626     VSRAM addres to access (goes to l212)
 w640     [???] (set to start the sequence for w619..w622)
+w646     Set if plane A is opaque
 w647     Plane B color index to show (to l318)
+w648     Set if plane B is opaque
 w655     Set if sprite link == 127 (inverted?)
 w656     Sprite height bit 1?
 w657     Sprite height bit 0?
@@ -507,12 +513,12 @@ w969     Color bit 3 of chosen sprite layer pixel (odd)
 w970     Sprite layer palette from line buffer? (affected by mode 5, involves a latch and "spr_pal")
 w971     Sprite layer priority from line buffer? (affected by mode 5, involves a latch and "spr_priority")
 w972     Sprite layer color from line buffer? (affected by mode 5, involves a latch and "spr_index")
-w973     Final sprite layer priority? (forced to 0 in mode 4)
-w974     Final sprite palette? (forced to 01 in mode 4)
-w975     l556 == 2'h3 (S/H palette check?)
-w976     l558 != 4'h0 (not transparent pixel check?)
-w977     l558 == 4'hE (S/H highlight pixel check?)
-w978     l558 == 4'hF (S/H shadow pixel check?)
+w973     Final sprite layer priority (forced to 0 in mode 4, used in layer mixing)
+w974     Final sprite palette (forced to 01 in mode 4, used in layer mixing)
+w975     l556 == 2'h3 (sprite S/H palette check?)
+w976     l558 != 4'h0 (sprite not transparent pixel check?)
+w977     l558 == 4'hE (sprite S/H highlight pixel check?)
+w978     l558 == 4'hF (sprite S/H shadow pixel check?)
 w979     Line buffer write data priority (odd?)
 w980     Line buffer write data palette (odd?)
 w982     Line buffer write data priority (even?)
@@ -528,20 +534,25 @@ w1011    Used for VRAM address computation (w1010 OR bit 9 in m4)
 w1012    Physical VRAM address (upper half, latched into l592)
 w1013    VRAM address MSB to use
 w1014    Physical VRAM address (lower half, latched into l593)
+w1021    Set on CRAM bus access
 w1027    ??? (requires S/H enabled, low sprite priority, two more things)
 w1028    ??? (requires S/H enabled, high sprite priority, two more things)
 w1029    S/H enable
 w1030    Is it a S/H sprite pixel?
 w1031    Is it a S/H sprite pixel OR no sprite pixel?
+w1032    Set if plane A layer is transparent in this pixel
+w1033    Set if plane B layer is transparent in this pixel
 w1034    reg_test0[8:7] == 2'h1; (layer override: sprite)
 w1035    reg_test0[8:7] == 2'h2; (layer override: plane A)
 w1036    reg_test0[8:7] == 2'h3; (layer override: plane B)
 w1037    reg_test0[8:7] == 2'h0; (layer override: none)
-w1050    Show plane A? (goes to w1051)
-w1051    Show plane A? (after override is applied)
-w1057    Show plane B? (goes to w1058)
-w1058    Show plane B? (after override is applied)
-w1065    Shadow or highlight pixel
+w1044    Set to output sprite plane to color bus (goes to l603)
+w1050    Set to output plane A to color bus (goes to w1051)
+w1051    Set to output plane A to color bus (after override is applied, goes to l604)
+w1057    Set to output plane B to color bus (goes to w1058)
+w1058    Set to output plane B to color bus (after override is applied, goes to l605)
+w1061    Set to output background plane to color bus (goes to l606)
+w1065    Shadow or highlight pixel color index (part of w1030's expression)
 w1069    ??? (affected by layer override enable, involves BG color bit 6)
 w1070    ??? (affected by layer override enable, involves BG color bit 7)
 w1072    CRAM CPU access in mode 5?
@@ -719,8 +730,10 @@ l170     Not start of vblank (from w469)
 l173     H Timing signal: (whatever w492 is, from l122)
 l178     Bit 3 of H counter (related to tilemap fetches?)
 l179     Register $09 (mode 4 vscroll)
+l180     Holds data read from VSRAM bus (updated when w516 goes high)
 l181     Data to write to VSRAM
 l182     Data to write to VSRAM (bits 10:8, goes to l181)
+l183     Enables VSRAM output to the VRAM bus
 l184     VScroll value to work with (VSRAM output in mode 5, register $09 in mode 4) (from w515, latched when w517)
 l187     Latches window left/right split select (copied from reg $11 on w542)
 l188     Latches window X split position (copied from reg $11 on w542)
@@ -735,8 +748,10 @@ l196     VRAM address output enable: bits 4:0 of plane A/B tile fetch
 l197     Fetching plane A (0) or plane B (1)?
 l198     Bit 1 of plane A/B tile address to fetch (inverted)
 l202     [???] (there's window tilemap fetch on VRAM bus)
-l207     VSRAM write, upper byte (from w323)
-l208     VSRAM write, lower byte (from w324)
+l206     VSRAM read enable (from w201, to l209)
+l207     VSRAM write enable, upper byte (from w323, to l210)
+l208     VSRAM write enable, lower byte (from w324, to l211)
+l209     VSRAM read enable (from l206, to w516)
 l210     VSRAM write enable, upper byte (bits 10:8)
 l211     VSRAM write enable, lower byte (bits 7:0)
 l212     VSRAM address to access (from w626)
@@ -749,6 +764,7 @@ l241     [???] (amount to shift plane to the right? from l236)
 l269     Plane A color index to show (from w607, to l270)
 l270     Plane A color index to show (from l269, to color bus)
 l273     [???] (found a lot in the layer mux block)
+l293     VRAM address bits 6:1 (used in VSRAM block)
 l311     Plane B tile select (left or right)
 l318     Plane B color index to show (from w647, to l319)
 l319     Plane B color index to show (from l319, to color bus)
@@ -808,10 +824,11 @@ l592     Physical VRAM address (upper half, latched from w1012)
 l593     Physical VRAM address (lower half, latched from w1014)
 l601     CRAM write, upper byte (latched from w302)
 l602     CRAM write, lower byte (latched from w303)
-l603     Show sprite plane? (from w1044, goes to color bus)
-l604     Show plane A? (from w1051, goes to color bus)
-l605     Show plane B? (from w1058, goes to color bus)
-l606     Show background plane? (from w1061, goes to color bus)
+l603     Show sprite plane (from w1044, goes to color bus)
+l604     Show plane A (from w1051, goes to color bus)
+l605     Show plane B (from w1058, goes to color bus)
+l606     Show background plane (from w1061, goes to color bus)
+l615     SPA/B pin's input (logic reversed from pin!)
 l617     CRAM address to access (from w1076)
 l619     Set if output color is transparent (latched from w1077, goes to l625)
 l620     CRAM write: data for "blue" bits (internal bits 8:6)

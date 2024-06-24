@@ -11,10 +11,12 @@
 - Register writes are triggered when `CD1` and `CD0` become `10` after doing a write. The value is copied from the latched command (instead of the data bus).
 - There's no centralized register file, instead internally there's an "enable" for each latch spread all over the VDP.
 - The register number is decoded in two parts. First bits 4:3 are decoded (`00`, `01`, `01` if mode 5 only, `11` if mode 5 only) and then bits 2:0 separately (eight different lines), a combination of those two is then used to detect the individual registers. The "if mode 5 only" check is used to lock out registers `$0B` onwards (VDP will ignore those writes in mode 4).
+- Registers `$0B` and above are locked out outside mode 4 (writes don't go through). When a register write _does_ go through however, the whole register is written, including the bits not relevant to the current video mode (which should be observable when switching to the other mode).
 
 ## FIFO
 
 - Byte writes go straight to the FIFO. Each FIFO entry has two flags to keep track of which bytes are valid (upper byte and lower byte flags). Both MD and SMS mode can issue byte writes.
+    + For some reason I can't get the VDP to actually treat byte writes in MD mode as byte writes, however (it still writes words). I may be still missing something here.
 - The flushing mechanism accounts for both 8-bit and 16-bit VRAM buses by having an extra bit for the flush index. On 8-bit buses the whole index is incremented by +1, and on 16-bit buses it's incremented by +2.
 - FIFO FULL is set when the two indices are identical after a write, and reset when the indices stop being identical.
 - FIFO EMPTY is set when the two indices are identical after flushing, and reset when the indices stop being identical.
