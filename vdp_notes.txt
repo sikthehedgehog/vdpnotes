@@ -178,7 +178,7 @@ w259     w256 when FIFO index == 3, sends entry's address to VRAM address bus
 w260     w256 when FIFO index == 2, sends entry's address to VRAM address bus
 w263     Set when DMA fill and FIFO empty
 w264     Increment FIFO write index; data write (through DATA port access or DMA transfer)
-w267     DMA in progress & reg_dmd[1] == 1 (DMA transfer) (to l5)
+w267     Set to output DMA source address to CPU address bus (also goes to l5)
 w268     Set to output data from FIFO to data bus
 w269     Time to flush FIFO entry (free access slot and FIFO not empty) (to l49)
 w270     Clears t28 when DMA is over
@@ -205,7 +205,7 @@ w291     FIFO write enable for 3rd slot data
 w292     FIFO write enable for 4th slot data
 w293     FIFO write enable for 1st slot data
 w294     FIFO write enable for 2nd slot data
-w295     Both FIFO indices match, used to detect when FIFO becomes full or empty?
+w295     Both FIFO indices match, used to detect when FIFO becomes full or empty
 w296     Set when incrementing FIFO read index by half entry
 w297     Set when incrementing FIFO read index by one entry
 w299     ??? (VRAM address write enable? it's clocked too)
@@ -606,6 +606,9 @@ l2       H Timing signal: refresh slot (from l1, introduces 3 cycles of latency)
 l3       H Timing signal: refresh slot (from l2, introduces 4 cycles of latency)
 l4       Set during a refresh slot for 4 cycles
 l5       Used to ensure that w267 is stable
+l6       ??? (affects output of MSB of source address in DMA transfer from ROM)
+l7       (pipeline from l6, to l8)
+l8       (pipeline from l7)
 l9       End of interrupt acknowledge (from w48, to l10)
 l10      End of interrupt acknowledge (from l9, to l11)
 l11      End of interrupt acknowledge (from l10)

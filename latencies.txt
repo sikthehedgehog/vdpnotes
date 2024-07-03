@@ -1,0 +1,10 @@
+[w495] Start of hblank: 10 dots
+[w496] End of hblank: 10 dots
+[w500] Start of hsync: 11 dots
+[w501] End of hsync: 11 dots
+[w500] Start of back porch: 2 dots
+[w502] V counter increment: 2 dots
+
+The entire viewport is shifted by 10 dots (i.e. $00A..$109 for H32, $00A..$149
+for H40), but it's actually like that in the PLA. I suppose it's other parts of
+the rendering circuit that are delayed this much?
