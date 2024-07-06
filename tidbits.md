@@ -36,6 +36,7 @@
 ## Mode 4 implementation
 
 - In mode 5, the VDP reads two 8×1 tiles for each of plane A and B, and has to pick which of them to read when picking a pixel to display. They took advantage of this in mode 4 and the mux for plane A will also do the bit shuffling to convert from planar to chunky.
+- Plane B is "disabled" by forcing its layer transparent. Technically it's still functional, but without any data fetches it would have only shown garbage anyway.
 - Sprite rendering seems to have been shoehorned into the Mega Drive (i.e. sprites are rendered into the linebuffer).
 - The upper byte of the command (`CD4:2` and `A16:A4`) are permanently cleared while in mode 4 (the latch's reset line is held active). This should be observable if switching from mode 5 to mode 4 to mode 5.
 
@@ -44,10 +45,11 @@
 Surprisingly mode 5 seems to be usable in SMS mode as the VDP explicitly makes some accommodations for it. What is confirmed so far:
 
 - VDP commands (except register writes) have been extended to 3 bytes. This allows the Z80 to address all of video memory.
-- When writing data, it goes directly to the FIFO (no intermediate latch), and each entry keeps track of whether each byte holds valid data.
+- When writing data, it goes directly to the FIFO (no intermediate latch), and each entry keeps track of whether each byte holds valid data (sadly, the whole entry is wasted on a single byte).
+    +  Unlike in MD mode, byte writes *do* work properly in SMS mode. The bottom bit of the current address is used to determine whether it's an upper or lower byte, instead of CPU bus signals.
 - It's possible to read all 10 bits of the status port by reading one of the mirrors of the VDP control port. If address bit 1 is clear (e.g. port `$BD` instead of `$BF`) data bits 1-0 will be replaced with bits 9-8.
     + This _only_ happens in mode 5, otherwise the mirrors behave as usual.
 
-Data writes and reads have to be examined yet, but the FIFO actively keeps track of whether one or both bytes have been written and behaves differently in SMS mode, so there's an adjustment here as well.
+Data reads have to be examined yet, but I would be surprised if it's any different than for data writes.
 
-It isn't known yet whether DMA transfer works in SMS mode, but if it does, source address will be measured in bytes instead of words (unlike MD mode), since the source address is used as-is on the address bus.
+It isn't known yet whether DMA transfer works in SMS mode (probably not), but if it does, source address will be measured in bytes instead of words (unlike MD mode), since the source address is used as-is on the address bus. DMA copy and fill work as expected, as they don't involve the CPU bus.
