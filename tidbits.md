@@ -44,7 +44,7 @@
 Surprisingly mode 5 seems to be usable in SMS mode as the VDP explicitly makes some accommodations for it. What is confirmed so far:
 
 - VDP commands (except register writes) have been extended to 3 bytes. This allows the Z80 to address all of video memory.
-- When writing data, it goes directly to the FIFO (no intermediate latch), and each entry keeps track of whether each byte holds valid data. The FIFO index has a "bit -1" to keeps track of partial writes (i.e. only one byte written).
+- When writing data, it goes directly to the FIFO (no intermediate latch), and each entry keeps track of whether each byte holds valid data.
 - It's possible to read all 10 bits of the status port by reading one of the mirrors of the VDP control port. If address bit 1 is clear (e.g. port `$BD` instead of `$BF`) data bits 1-0 will be replaced with bits 9-8.
     + This _only_ happens in mode 5, otherwise the mirrors behave as usual.
 
