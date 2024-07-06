@@ -25,12 +25,13 @@
 ## DMA operation
 
 - Internally, length is stored _inverted_ (NOT'd) and then incremented until all bits are set. End result is the same, it probably saved a few gates.
-- Usually, during memory writes the CD flags stored in the FIFO are used. DMA fill uses the live command flags however (makes sense, since fill doesn't use the FIFO, though not sure where the fill data comes from yet).
+- Usually, during memory writes the CD flags stored in the FIFO are used. DMA copy uses the live command flags however (makes sense, since copy doesn't use the FIFO), I need to recheck if this is the case for DMA fill as well.
 
 ## Sprite system
 
 - Sprite line buffer has a 8px wide data bus and VDP draws 8px at a time.
 - Internally there's a mux which changes the order in which sprites are drawn (front to back or back to front). It's hardwired to "front to back" by tying the select line to ground (leftover from an old design?).
+- The VDP checks the VRAM address on the bus to see when a write to the sprite cache happens, but expects the data to come from the FIFO. This breaks with DMA copy, as it will *not* update the cache that way because it by-passes the FIFO.
 
 ## Mode 4 implementation
 
