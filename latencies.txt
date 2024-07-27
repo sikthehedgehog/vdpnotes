@@ -8,3 +8,68 @@
 The entire viewport is shifted by 10 dots (i.e. $00A..$109 for H32, $00A..$149
 for H40), but it's actually like that in the PLA. I suppose it's other parts of
 the rendering circuit that are delayed this much?
+
+
+w502 >> l115 >> l381 >> t40 >> l383 >> l385 >> t41
+w502 >> l115 >> l381 >> t41 >> t10
+t40 >> l383 >> w721[l384|l385] >> t40
+
+
+=  0 dots (same wire) or as fast as MCLK allows
+>  0.5 dots (1 DCLK)
+>> 1 dot (2 DCLK)
+
+start of vblank to interrupt: 2 dots
+   w469 >> l170 >> t12 = w122
+   w504 >> l110 >> t12 = w122
+   w505 >> l115 >> t12 = w122
+   w505 >> l117 >> t12 = w122
+
+start of hblank to hblank flag: 4 dots (m5), 3 dots (m4)
+   m5: w495 >> l143 >> t30 >> l129 >> l158 = w422
+   m4: w495 >> l143 >> t30 >> l129 = w422
+start of hblank to YS: 6 dots (m5), 5 dots (m4)
+   w422 >> l624 >> l614
+
+m5 hscroll fetch (from PLA to latch): 6 dots
+(4.5, 5, 5.5, 6 dots for each byte, respectively)
+   w488 >> l148 >> l314 >> l315 >> l316 > l213 = w570 = l191
+   w488 >> l148 >> l314 >> l315 >> l316 > l213 > l214 = w571 = l194
+   w488 >> l148 >> l314 >> l315 >> l316 > l213 > l214 > l215 = w572 = l192
+   w488 >> l148 >> l314 >> l315 >> l316 > l213 > l214 > l215 > l216 = w573 = l195
+
+m5 tilemap fetch (from PLA to latch): 6 dots
+(4.5, 5, 5.5, 6 dots for each byte, respectively)
+   w477/w478 >> l118/l119 = w560 >> l203 >> l204 >> l205 > l251 = w615 = l219
+   w477/w478 >> l118/l119 = w560 >> l203 >> l204 >> l205 > l251 > l252 = w616 = l220
+   w477/w478 >> l118/l119 = w560 >> l203 >> l204 >> l205 > l251 > l252 > l253 = w617 = l221
+   w477/w478 >> l118/l119 = w560 >> l203 >> l204 >> l205 > l251 > l252 > l253 > l254 = w618 = l222
+
+???: 4 dots
+(2.5, 3, 3.5, 4 dots for each byte, respectively)
+   w507 >> l267 >> l268 > l227 = w588 = l226
+   w507 >> l267 >> l268 > l227 > l228 = w589 = l225
+   w507 >> l267 >> l268 > l227 > l228 > l229 = w590 = l224
+   w507 >> l267 >> l268 > l227 > l228 > l229 > l230 = w591 = l223
+??? (m4)
+   w507 >> l267 >> l268 > l227 > l228 > l229 > l230 > l231 = w598
+
+??? (from PLA to latch): 3 dots
+(1.5, 2, 2.5, 3 dots for each byte, respectively)
+   w507 >> l133 > l247 = l246
+   w507 >> l133 > l247 > l248 = l245
+   w507 >> l133 > l247 > l248 > l249 = l244
+   w507 >> l133 > l247 > l248 > l249 > l250 = l243
+
+??? (from PLA to latch): 6 dots
+(4.5, 5, 5.5, 6 dots for each byte, respectively)
+   w508 >> l140 >> l312 >> l313 >> l298 = w627 = l297
+   w508 >> l140 >> l312 >> l313 >> l298 > l299 = w628 = l296
+   w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 = w629 = l295
+   w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 = w630 = l294
+   w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 > l302 = w631
+???
+   w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 > l302 >> w598 (m5) = w592
+???
+   l261:l264 = w607 >> l269
+   l237:l240 = w607 >> l269

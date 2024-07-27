@@ -29,6 +29,7 @@ w62      Start DMA transfer
 w63      Start DMA copy or fill
 w64      Assert BGACK (high logic)
 w65      Swap status port bits 1:0 with 9:8 (req: SMS mode, mode 5, mirror status port, wtf?)
+w66      Set sprite overflow flag
 w70      68k within VDP address range (address must be 110xx000 xxxxxxxx 000xxxxx)
 w71      Output extra V and H counter bits over CPU data bus (test feature, SMS mode only)
 w72      Status port PAL bit (or FIFO full if w65 set)
@@ -76,6 +77,7 @@ w114     Read enable for CTRL
 w117     /DTACK?
 w120     Set F flag, also sets whatever is t12 (see w121)
 w121     ??? (resets t12)
+w122     Fire the interrupt (be more specific? high or low logic?) (68k=t12, Z80=w9)
 w123     V counter latch bottom bit
 w124     68000 CPU access detected
 w128     Write enable for debug address port (MD mode)
@@ -301,6 +303,7 @@ w410     w361 (H counter wraparound) & w416 (???)
 w411     External hsync, when enabled by reg $0C (gated from l149)
 w414     H Timing signal: start of equalization pulse
 w416     ~reg_8c_b4 & reg_80_b0 (related to sprites?)
+w419     Lets you force hscroll table fetch when reg_test1[6:4] == 3'h5
 w421     ??? Hsync for mode 4? Selects something depending on w427 (reg $00 bit 3 set in mode 5)
 w422     Status port HB bit (0 = not in hblank, 1 = in hblank)
 w423     H Timing signal: start of hsync
@@ -318,7 +321,7 @@ w436     Do V counter increment
 w437     Do V counter wraparound
 w439     Status port VB bit (0 = active scan, 1 = passive scan)
 w446     Status port ODD bit (0 = even field, 1 = odd field)
-w457     Start of vblank (opposite of w469, latched from l170)
+w457     Start of vblank (opposite of w469, latched from l170), also latches interlaced mode
 w458     Reset OR start of vblank
 w466     Opposite of w439 (1 = active scan, 0 = passive scan)
 w467     V Timing signal: V counter wraparound point
@@ -351,7 +354,8 @@ w499     H Timing signal: end of equalization pulse (11px early?)
 w500     H Timing signal: start of hsync (11px early), start of back porch (2px early)
 w501     H Timing signal: end of hsync (11px early)
 w502     H Timing signal: increment V counter (low logic)
-w505     H Timing signal: VSRAM read in full vscroll? (low logic) hpos = 258 (H32) or 322 (H40), when F flag is cleared
+w504     H Timing signal: H counter = 0
+w505     H Timing signal: VSRAM read in full vscroll? (low logic), when F flag is cleared in SMS mode
 w506     H Timing signal: VSRAM read in column vscroll? (H counter is multiple of 8px (0, 8, 16, 24...504))
 w507     H Timing signal: H counter multiple of 8px + 7 (mode 4), multiple of 16px + 7 (mode 5)
 w508     H Timing signal: H counter multiple of 16px + 15
@@ -368,7 +372,7 @@ w527     Offset to access in the tilemap (X and Y merged)
 w528     Actual Y coordinate to access in the tilemap
 w529     Same as w530 (see below) in mode 4, forced to 0 in mode 5
 w530     Y coordinate to access in the tilemap (mode 4 wraparound)
-w532     Either plane A or B address (depending on l200)
+w532     Either m5 plane A or B address bits 17:14 (depending on l200)
 w534     Set when H counter is not within 384..511
 w535     Hscroll line to read (after applying hscroll mode bits)
 w536     X offset within window tilemap (accounts for H32 or H40)
@@ -381,15 +385,19 @@ w546     Which side of window X split? (0: left, 1: right)
 w547     V counter increment OR test reg1 b7 (same as w542)
 w552     Set if hscroll inhibit should kick in
 w553     Clear to latch hscroll for plane A in mode 4
-w554     ??? (hscroll value to use?)
-w561     Set if in border horizontally (H32: H counter >= 256; H40: >= 320)
+w554     Hscroll value to use when fetching
+w561     Set if in left/right border (H32: H counter >= 256; H40: >= 320)
 w562     Set if in viewport horizontally and in mode 4
 w563     Set if w562 and odd tile (H counter = multiple of 16px + 8px)
 w565     In viewport horizontally: current 16px column; in border: 4'b1111
 w568     H counter >= 320
 w569     Set on VSRAM bus access
-w574     Set to latch hscroll for plane A in mode 5
-w575     Set to latch hscroll for plane B in mode 5
+w570     Set to latch from VRAM to plane A hscroll bits 7:0 (see l191)
+w571     Set to latch from VRAM to plane A hscroll bits 9:8 (see l194)
+w572     Set to latch from VRAM to plane B hscroll bits 7:0 (see l192)
+w573     Set to latch from VRAM to plane B hscroll bits 9:8 (see l195)
+w574     Set to use hscroll for plane A in mode 5
+w575     Set to use hscroll for plane B in mode 5
 w576     Bits 4:2 of plane A/B tile address to fetch before vflip
 w577     Bits 4:2 of plane A/B tile address to fetch
 w578     Bits 13:5 of plane A/B 1st tile address to fetch
@@ -401,8 +409,10 @@ w584     Plane A/B hflip flag (read from VRAM), adjusted for mode 4/5
 w585     Plane A/B vflip flag (read from VRAM), adjusted for mode 4/5
 w586     Plane A/B palette flags (read from VRAM), adjusted for mode 4/5
 w587     Plane A/B priority flag (read from VRAM), adjusted for mode 4/5
+w592     ??? (copies l223..l226 to l232..l235, l243..l246 to l255..l258, l259 to l260 when set)
 w606     Which pixel within a tile to show for plane A
 w607     Plane A color index to show (to l269)
+w611     ??? (copies l232..l235 to l237..l240, l260 to l265 when set)
 w615     Set to latch lower byte of plane A/B 1st tilemap fetch
 w616     Set to latch upper byte of plane A/B 1st tilemap fetch
 w617     Set to latch lower byte of plane A/B 2nd tilemap fetch
@@ -416,6 +426,7 @@ w624     Set if H counter is multiple of 16px if full vscroll, or if offset +8 i
 w625     Vscroll column to read from VSRAM
 w626     VSRAM addres to access (goes to l212)
 w640     [???] (set to start the sequence for w619..w622)
+w642     Lets you force a hscroll table fetch when reg_test1[7] == 1 and HL
 w646     Set if plane A is opaque
 w647     Plane B color index to show (to l318)
 w648     Set if plane B is opaque
@@ -435,6 +446,7 @@ w696     Sprite index to access (to l398)
 w705     reg_test_18[6:5] == 2 (low logic) Use latched sprite [other] for w770
 w706     reg_test_18[6:5] == 1 (low logic) Use latched sprite pattern l425 for w770
 w707     reg_test_18[6:5] == 0 (low logic) Use latched sprite X coordinate for w770
+w717     (part of w738 logic, test register use only)
 w732     [???] (from w738, throws in more test register stuff)
 w738     [???] w717 when reg_test0[14] == 0
 w740     Is VRAM address within sprite table range
@@ -614,6 +626,7 @@ l10      End of interrupt acknowledge (from l9, to l11)
 l11      End of interrupt acknowledge (from l10)
 l12      [has another use with w51] Used to reset t6 two cycles after it's set (t6 -> l12 -> l13)
 l13      [has another use with w52] Used to reset t6 two cycles after it's set (t6 -> l12 -> l13)
+l14      Clear sprite overflow and collision flags on vblank
 l18      Select between DATA and CTRL port for writes
 l19      Select between DATA and CTRL port for reads (used by w143)
 l21      Latch pipeline during access to DATA/CTRL? (pipeline, from l22)
@@ -718,7 +731,7 @@ l144     H Timing signal: (whatever w498 is)
 l145     H Timing signal: 3px after sprite X & tile ID fetch in mode 5 (from w510)
 l146     H Timing signal: (whatever w509 is)
 l147     H Timing signal: m4 fetch sprite Y data, m5 scan sprite Y data? (see w487)
-l148     H Timing signal: (whatever w488 is)
+l148     H Timing signal: hscroll table fetch (pipeline goes to l316)
 l149     External HSync pin input
 l152     End of hblank
 l155     H Timing signal: m4 sprite X / tile ID fetches? (active scan only, passive scan is weird) (from w485)
@@ -751,6 +764,9 @@ l196     VRAM address output enable: bits 4:0 of plane A/B tile fetch
 l197     Fetching plane A (0) or plane B (1)?
 l198     Bit 1 of plane A/B tile address to fetch (inverted)
 l202     [???] (there's window tilemap fetch on VRAM bus)
+l203     (pipeline, goes to l204)
+l204     (pipeline, goes to l205)
+l205     Set to start fetching of tilemap table data (see l251)
 l206     VSRAM read enable (from w201, to l209)
 l207     VSRAM write enable, upper byte (from w323, to l210)
 l208     VSRAM write enable, lower byte (from w324, to l211)
@@ -758,17 +774,28 @@ l209     VSRAM read enable (from l206, to w516)
 l210     VSRAM write enable, upper byte (bits 10:8)
 l211     VSRAM write enable, lower byte (bits 7:0)
 l212     VSRAM address to access (from w626)
+l213     Set while fetching hscroll plane A bits 7:0 (see w570)
+l214     Set while fetching hscroll plane A bits 9:8 (see w571)
+l215     Set while fetching hscroll plane B bits 7:0 (see w572)
+l216     Set while fetching hscroll plane B bits 9:8 (see w573)
 l219     Plane A/B 1st tilemap fetch lower byte
 l220     Plane A/B 1st tilemap fetch upper byte
 l221     Plane A/B 2nd tilemap fetch lower byte
 l222     Plane A/B 2nd tilemap fetch upper byte
 l236     [???] (amount to shift plane to the right?)
 l241     [???] (amount to shift plane to the right? from l236)
+l251     Set while fetching tilemap data (1st tile) bits 7:0 (see w615)
+l252     Set while fetching tilemap data (1st tile) bits 15:8 (see w616)
+l253     Set while fetching tilemap data (2nd tile) bits 7:0 (see w617)
+l254     Set while fetching tilemap data (2nd tile) bits 15:8 (see w618)
 l269     Plane A color index to show (from w607, to l270)
 l270     Plane A color index to show (from l269, to color bus)
 l273     [???] (found a lot in the layer mux block)
 l293     VRAM address bits 6:1 (used in VSRAM block)
 l311     Plane B tile select (left or right)
+l314     (pipeline, goes to l315)
+l315     (pipeline, goes to l316)
+l316     Set to start fetching of hscroll table data (see l213)
 l318     Plane B color index to show (from w647, to l319)
 l319     Plane B color index to show (from l319, to color bus)
 l320     [???] (found a lot in the layer mux block)
@@ -825,6 +852,7 @@ l574     (use unknown?) Free VRAM slot (CPU access allowed) (latched from l109)
 l585     VRAM write to lower byte (latched from w288, goes to w999)
 l592     Physical VRAM address (upper half, latched from w1012)
 l593     Physical VRAM address (lower half, latched from w1014)
+l600     Set sprite collision flag
 l601     CRAM write, upper byte (latched from w302)
 l602     CRAM write, lower byte (latched from w303)
 l603     Show sprite plane (from w1044, goes to color bus)
@@ -854,7 +882,7 @@ t8       External interrupt pending
 t9       Vblank interrupt pending (status port F bit)
 t10      Status port SOVR bit
 t11      Status port C bit
-t12      ??? (set by w120, reset by w121)
+t12      Set to fire the interrupt in MD mode (be more specific?)
 t13      Sets the latch pipeline during access to DATA/CTRL (I think?)
 t14      Seems to be set while VDP is waiting for data from VRAM/CRAM/VSRAM to be latched on a read
 t15      Which command byte to write next in SMS mode? (t16 gated by w154?)

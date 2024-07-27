@@ -1,0 +1,37 @@
+List of latches that take their value from vram_serial
+(VRAM input used for fetching rendering data):
+
+- l191 (latched on w570): plane A hscroll, bits 7:0
+- l192 (latched on w572): plane B hscroll, bits 7:0
+- l194 (latched on w571): plane A hscroll, bits 9:8
+- l195 (latched on w573): plane B hscroll, bits 9:8
+- l219 (latched on w615): plane A or B tilemap data (1st tile), bits 7:0
+- l220 (latched on w616): plane A or B tilemap data (1st tile), bits 15:8
+- l221 (latched on w617): plane A or B tilemap data (2nd tile), bits 7:0
+- l222 (latched on w618): plane A or B tilemap data (2nd tile), bits 15:8
+- l223 (latched on w591)
+- l224 (latched on w590)
+- l225 (latched on w589)
+- l226 (latched on w588)
+- l243 (latched on w597)
+- l244 (latched on w596)
+- l245 (latched on w595)
+- l246 (latched on w594)
+- l275 (latched on w622)
+- l276 (latched on w621)
+- l277 (latched on w620)
+- l278 (latched on w619)
+- l294 (latched on w630)
+- l295 (latched on w629)
+- l296 (latched on w628)
+- l297 (latched on w627)
+- l342 (latched on w661)
+- l343 (latched on w660, through w680): sprite Y pos (mode 4)
+- l386 (latched on w745)
+- l387 (latched on w746)
+- l435 (latched on w749)
+- l436 (latched on w744)
+- l478 (latched on w834)
+- l479 (latched on w833)
+- l480 (latched on w829)
+- l481 (latched on w830)
