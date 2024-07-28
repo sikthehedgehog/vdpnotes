@@ -9,10 +9,10 @@ List of latches that take their value from vram_serial
 - l220 (latched on w616): plane A or B tilemap data (1st tile), bits 15:8
 - l221 (latched on w617): plane A or B tilemap data (2nd tile), bits 7:0
 - l222 (latched on w618): plane A or B tilemap data (2nd tile), bits 15:8
-- l223 (latched on w591)
-- l224 (latched on w590)
-- l225 (latched on w589)
-- l226 (latched on w588)
+- l223 (latched on w591): plane A tile data, pixels 7:6
+- l224 (latched on w590): plane A tile data, pixels 5:4
+- l225 (latched on w589): plane A tile data, pixels 3:2
+- l226 (latched on w588): plane A tile data, pixels 1:0
 - l243 (latched on w597)
 - l244 (latched on w596)
 - l245 (latched on w595)

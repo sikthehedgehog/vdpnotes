@@ -37,6 +37,8 @@ m5 hscroll fetch (from PLA to latch): 6 dots
    w488 >> l148 >> l314 >> l315 >> l316 > l213 > l214 = w571 = l194
    w488 >> l148 >> l314 >> l315 >> l316 > l213 > l214 > l215 = w572 = l192
    w488 >> l148 >> l314 >> l315 >> l316 > l213 > l214 > l215 > l216 = w573 = l195
+m5 hscroll fetch (from PLA to address bus): 2 dots
+   w488 >> l148 >> l314 = w643
 
 m5 tilemap fetch (from PLA to latch): 6 dots
 (4.5, 5, 5.5, 6 dots for each byte, respectively)
@@ -45,7 +47,7 @@ m5 tilemap fetch (from PLA to latch): 6 dots
    w477/w478 >> l118/l119 = w560 >> l203 >> l204 >> l205 > l251 > l252 > l253 = w617 = l221
    w477/w478 >> l118/l119 = w560 >> l203 >> l204 >> l205 > l251 > l252 > l253 > l254 = w618 = l222
 
-???: 4 dots
+plane A tile data (from PLA to latch): 4 dots
 (2.5, 3, 3.5, 4 dots for each byte, respectively)
    w507 >> l267 >> l268 > l227 = w588 = l226
    w507 >> l267 >> l268 > l227 > l228 = w589 = l225
@@ -70,6 +72,12 @@ m5 tilemap fetch (from PLA to latch): 6 dots
    w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 > l302 = w631
 ???
    w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 > l302 >> w598 (m5) = w592
+   (on w592) l223:l226 >> l232:l235
+   (on w592) l243:l246 >> l255:l258
+   (on w592) l259 >> l260
 ???
    l261:l264 = w607 >> l269
    l237:l240 = w607 >> l269
+
+Alternating /SE0 and /SE1 (128k VRAM only): 0.5 dots
+   w1007 > l586 = SE0/SE1
