@@ -6,6 +6,12 @@ Ports `$C00018` and `$C0001C` seem to be used to access test features for the VD
 
 ## Test register $0
 
+Writing to `$C0001C`:
+
+* Bit 5 changes whether the VRAM address is multiplexed (row/column) or output as-is.
+    - `0` = alternate between row and columns on `AD[7:0]` (VRAM address bus)
+    - `1` = put the whole address on `{RD[7:0],AD[7:0]}` (VRAM data and address bus)
+
 ## Test register $1
 
 Writing to `$C0001C`:
