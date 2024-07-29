@@ -1,6 +1,8 @@
 # VDP implementation tidbits
 
 - There's no centralized way to access the VRAM bus, everything that needs it puts their address directly on it and the VDP relies on its timing signals to coordinate who has access to the bus.
+- With an 8-bit bus (mode 4 and mode 5 64KB), `/SE0` is always asserted. With a 16-bit bus (mode 5 128KB), it constantly alternates between `/SE0` and `/SE1`. This lets the VDP share the same 8-bit port to read data from both VRAM halves.
+    + (`/SE0` and `/SE1` are the two VRAM selects, for context)
 - The F flag is the internal "vblank interrupt pending" flag exposed directly on the status port. There are also hblank and external interrupt pending flags, but those aren't visible from outside.
 - DMA length is stored _inverted_, then incremented as DMA progresses. This probably saved some gates, I guess.
 - CRAM data is internally stored as `bbbgggrrr` in mode 5 and `xxxbbggrr` in mode 4. This should be observable when switching between modes.
