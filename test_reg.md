@@ -11,6 +11,7 @@ Writing to `$C0001C`:
 * Bit 5 changes whether the VRAM address is multiplexed (row/column) or output as-is.
     - `0` = alternate between row and columns on `AD[7:0]` (VRAM address bus)
     - `1` = put the whole address on `{RD[7:0],AD[7:0]}` (VRAM data and address bus)
+* Bit 15 seems to be unused.
 
 ## Test register $1
 
@@ -27,3 +28,4 @@ Writing to `$C0001C`:
 * Bit 8: when set, the HL pin will force a plane tilemap fetch.
 * Bit 9: when set, the HL pin will force a ??? fetch.
 * Bit 10: when set, the HL pin will force a ??? fetch.
+* Bits 15:11 seem to be unused.
