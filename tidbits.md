@@ -18,6 +18,7 @@
 - There's no centralized register file, instead internally there's an "enable" for each latch spread all over the VDP.
 - The register number is decoded in two parts. First bits 4:3 are decoded (`00`, `01`, `01` if mode 5 only, `11` if mode 5 only) and then bits 2:0 separately (eight different lines), a combination of those two is then used to detect the individual registers. The "if mode 5 only" check is used to lock out registers `$0B` onwards (VDP will ignore those writes in mode 4).
 - Registers `$0B` and above are locked out outside mode 4 (writes don't go through). When a register write _does_ go through however, the whole register is written, including the bits not relevant to the current video mode (which should be observable when switching to the other mode).
+- Autoincrement is either 1 in mode 4 or register `$0F`'s value in mode 5… in theory. In practice both are always added together, so that means that if you switch to mode 5, set the register, then switch back to mode 4, the actual autoincrement will be 1 more than the register's value.
 
 ## FIFO
 
