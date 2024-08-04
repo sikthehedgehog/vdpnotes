@@ -1,3 +1,8 @@
+// Plane B tile latch timing
+// (note: plane B latches even when not needed)
+
+// H counter is multiple of 16px + 15
+
 	assign w508 = pla_hcnt2[8];
 
 	assign pla_hcnt2[8] = (l106 & 9'd15) == 9'd15;

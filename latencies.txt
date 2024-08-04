@@ -72,13 +72,28 @@ plane A tile data (from PLA to latch): 4 dots
    w507 >> l133 > l247 > l248 > l249 = l244
    w507 >> l133 > l247 > l248 > l249 > l250 = l243
 
-??? (from PLA to latch): 6 dots
+Plane B 1st tile data (from PLA to latch): 4 dots
+(2.5, 3, 3.5, 4 dots for each byte, respectively)
+(w638 seems to insert a delay in a weird way...?)
+   w508 >> l140 = w638 >> w640 > l283 = w619 = l278
+   w508 >> l140 = w638 >> w640 > l283 > l284 = w620 = l277
+   w508 >> l140 = w638 >> w640 > l283 > l284 > l285 = w621 = l276
+   w508 >> l140 = w638 >> w640 > l283 > l284 > l285 > l286 = w622 = l275
+Plane B 2nd tile data (from PLA to latch): 6 dots
 (4.5, 5, 5.5, 6 dots for each byte, respectively)
    w508 >> l140 >> l312 >> l313 >> l298 = w627 = l297
    w508 >> l140 >> l312 >> l313 >> l298 > l299 = w628 = l296
    w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 = w629 = l295
    w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 = w630 = l294
-   w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 > l302 = w631
+Plane B tile data (from PLA to latch to 2nd latch): 6.5 dots? (7?)
+   w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 >? l302 = w631: l278 > l282
+   w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 >? l302 = w631: l277 > l281
+   w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 >? l302 = w631: l276 > l280
+   w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 >? l302 = w631: l275 > l279
+   w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 >? l302 = w631: l297 > l306
+   w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 >? l302 = w631: l296 > l305
+   w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 >? l302 = w631: l295 > l304
+   w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 >? l302 = w631: l294 > l303
 ???
    w508 >> l140 >> l312 >> l313 >> l298 > l299 > l300 > l301 > l302 >> w598 (m5) = w592
    (on w592) l223:l226 >> l232:l235
@@ -87,6 +102,10 @@ plane A tile data (from PLA to latch): 4 dots
 ???
    l261:l264 = w607 >> l269
    l237:l240 = w607 >> l269
+
+???
+   w512 >> l159 = w614 >> l241
+   w512 >> l159 = w614 >> l242 = l236
 
 Alternating /SE0 and /SE1 (128k VRAM only): 0.5 dots
    w1007 > l586 = SE0/SE1

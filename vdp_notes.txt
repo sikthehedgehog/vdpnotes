@@ -432,6 +432,7 @@ w624     Set if H counter is multiple of 16px if full vscroll, or if offset +8 i
 w625     Vscroll column to read from VSRAM
 w626     VSRAM addres to access (goes to l212)
 w640     [???] (set to start the sequence for w619..w622)
+w641     Which pixel of plane B tile to show? (0 to 7)
 w642     Lets you force a hscroll table fetch when reg_test1[7] == 1 and HL
 w646     Set if plane A is opaque
 w647     Plane B color index to show (to l318)
@@ -820,7 +821,15 @@ l271     Plane A color palette to show (from w604;w603, to l272)
 l272     Plane A color palette to show (from l271, to color bus)
 l273     Plane A priority to show (from w605, to l274 and mux block)
 l274     Plane A priority to show (from l273, to color bus)
+l275     Plane B 1st tile 4th byte latch (from VRAM, may be byteswapped?)
+l276     Plane B 1st tile 3rd byte latch (from VRAM, may be byteswapped?)
+l277     Plane B 1st tile 2nd byte latch (from VRAM, may be byteswapped?)
+l278     Plane B 1st tile 1st byte latch (from VRAM, may be byteswapped?)
 l293     VRAM address bits 6:1 (used in VSRAM block)
+l294     Plane B 2nd tile 4th byte latch (from VRAM, may be byteswapped?)
+l295     Plane B 2nd tile 3rd byte latch (from VRAM, may be byteswapped?)
+l296     Plane B 2nd tile 2nd byte latch (from VRAM, may be byteswapped?)
+l297     Plane B 2nd tile 1st byte latch (from VRAM, may be byteswapped?)
 l311     [???] X offset within plane (B?) output? (loaded with l236, MSB inverted; counts up every dot)
 l314     (pipeline, goes to l315)
 l315     (pipeline, goes to l316)

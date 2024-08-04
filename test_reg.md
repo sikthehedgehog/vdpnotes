@@ -43,6 +43,6 @@ Writing to `$C0001C`:
 * Bit 7: when set, the HL pin will force a hscroll table fetch. Also forces window registers to take effect immediately instead of being latched on V counter increment only.
     - (actually not sure on this bit, I need to recheck what it's actually forcing to be fetched)
 * Bit 8: when set, the HL pin will force a plane tilemap fetch.
-* Bit 9: when set, the HL pin will force a ??? fetch.
-* Bit 10: when set, the HL pin will force a ??? fetch.
+* Bit 9: when set, the HL pin will force a plane A tile fetch.
+* Bit 10: when set, the HL pin will force a plane B tile fetch.
 * Bits 15:11 seem to be unused.

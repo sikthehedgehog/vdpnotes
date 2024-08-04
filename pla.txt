@@ -58,6 +58,8 @@ w504     Start of vblank                  Start of vblank
 w505     F flag cleared                   F flag cleared
 w505     VSRAM read (full vscroll)*
 w506     VSRAM read (column vscroll)*
+w507     Plane A tile latch               Plane A tile latch
+w508     Plane B tile latch
 
 Yes, w500 and w505 seem to perform double duty.
 
