@@ -34,6 +34,12 @@
 - Internally, length is stored _inverted_ (NOT'd) and then incremented until all bits are set. End result is the same, it probably saved a few gates.
 - Usually, during memory writes the CD flags stored in the FIFO are used. DMA copy uses the live command flags however (makes sense, since copy doesn't use the FIFO), I need to recheck if this is the case for DMA fill as well.
 
+## Scroll layers
+
+- There's a single PLA entry to trigger all the tile reads for a plane (I think `w507`? for plane A, `w508` for plane B): it's loaded into a shift register and the `1` travels across it to trigger each of the eight latches in sequence.
+- On top of that after all eight bytes have been fetched it'll then copy everything to a separate latch (probably to make room for scrolling?).
+- It's continuously latching tiles on a fixed period of time even if there isn't tile data on the VRAM bus. It doesn't matter since the garbage is going to be hidden in the border area anyway.
+
 ## Sprite system
 
 - Sprite line buffer has a 8px wide data bus and VDP draws 8px at a time.
