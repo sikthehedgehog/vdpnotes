@@ -25,6 +25,12 @@ start of vblank to interrupt: 2 dots
    w505 >> l115 >> t12 = w122
    w505 >> l117 >> t12 = w122
 
+VRAM write enable (from PLA to signal): 4 dots
+   w483 = w384 >> l116 > l564 > l576 > l577 > l578 > l579 > w986
+VRAM write enable (from FIFO/DMA to signal): 5 dots (on), 6 dots (off) (w403 = w410 | l139)
+   w316 = w410 = w403 >> w384 >> l116 > l564 > l576 > l577 > l578 > l579 > w986
+   w316 = w410 >> l139 = w403 >> w384 >> l116 > l564 > l576 > l577 > l578 > l579 > w986
+
 start of hblank to hblank flag: 4 dots (m5), 3 dots (m4)
    m5: w495 >> l143 >> t30 >> l129 >> l158 = w422
    m4: w495 >> l143 >> t30 >> l129 = w422
@@ -46,6 +52,9 @@ m5 tilemap fetch (from PLA to latch): 6 dots
    w477/w478 >> l118/l119 = w560 >> l203 >> l204 >> l205 > l251 > l252 = w616 = l220
    w477/w478 >> l118/l119 = w560 >> l203 >> l204 >> l205 > l251 > l252 > l253 = w617 = l221
    w477/w478 >> l118/l119 = w560 >> l203 >> l204 >> l205 > l251 > l252 > l253 > l254 = w618 = l222
+m5 tilemap fetch (from PLA to address): 2 dots
+   w477 >> l118 = w557 >> l201 = w558
+   w478 >> l119 = w556 >> l200 = w558
 
 plane A tile data (from PLA to latch): 4 dots
 (2.5, 3, 3.5, 4 dots for each byte, respectively)

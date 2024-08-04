@@ -62,7 +62,7 @@ w98      Write enable for test port $8
 w99      Read enable for test port $8
 w100     Read enable for test port $F? (works different than usual)
 w101     DRAM row and column mux select (passed to w103)
-w103     color bus vs. DRAM address mux (involves reg $0B bit 7 and w101)
+w103     RA output, color bus vs. DRAM address mux (involves reg $0B bit 7 and w101)
 w104     DRAM ASEL signal (involves reg $0B bit 7)
 w105     ??? (controlled by debug reg $00 bit 0, involves color)
 w106     Interlaced mode 2 enable (high resolution)
@@ -364,15 +364,18 @@ w512     H Timing signal: H counter multiple of 16px + 3
 w515     VScroll value to work with (VSRAM output in mode 5, register $09 in mode 4)
 w516     Set to latch a VSRAM read into l180
 w519     Clear when vscroll inhibit should kick in, set otherwise
+w522     Y coordinate to access in the tilemap (before interlaced mode adjustment)
 w523     Set if plane A/B size is 32 tiles (reg_hsz == 2'h0)
 w524     Set if plane A/B size is 64 tiles (reg_hsz == 2'h1)
 w525     Set if plane A/B size is 128 tiles (reg_hsz == 2'h3)
-w526     Y coordinate to access in the tilemap (before wraparound)
+w526     Y coordinate to access in the tilemap (before wraparound, accounting for IM2)
 w527     Offset to access in the tilemap (X and Y merged)
-w528     Actual Y coordinate to access in the tilemap
-w529     Same as w530 (see below) in mode 4, forced to 0 in mode 5
-w530     Y coordinate to access in the tilemap (mode 4 wraparound)
-w532     Either m5 plane A or B address bits 17:14 (depending on l200)
+w528     Actual Y coordinate to access in the tilemap (see w527)
+w529     Same as w530 (see below) in mode 4, forced to 0 in mode 5 (used for calculating w528)
+w530     Do Y scroll wraparound? (for mode 4, goes to w529)
+w531     Set to output tilemap fetch address bits 16:14 on VRAM address bus
+w532     Plane address bits 16:13 (put on VRAM bus) / Either m5 plane A or B address bits 16:13 (depending on l200)
+w533     Plane address bits 12:11 (put on VRAM bus) / Either (m4) plane A or (m5) address bits 12:11
 w534     Set when H counter is not within 384..511
 w535     Hscroll line to read (after applying hscroll mode bits)
 w536     X offset within window tilemap (accounts for H32 or H40)
@@ -383,13 +386,16 @@ w544     Latch window Y register (into l189 and l190)
 w545     Which side of window Y split? (1: above, 0: below)
 w546     Which side of window X split? (0: left, 1: right)
 w547     V counter increment OR test reg1 b7 (same as w542)
-w552     Set if hscroll inhibit should kick in
+w552     Set if hscroll inhibit should kick in (in mode 4)
 w553     Clear to latch hscroll for plane A in mode 4
-w554     Hscroll value to use when fetching
+w554     Hscroll value to use when fetching, INVERTED (i.e. NOT'd)
+w555     Actual X coordinate to access in the tilemap (upper bits used in w527, lower bits in VRAM address bus)
+w558     Set to output tilemap fetch address bits 13:0 on VRAM address bus
 w561     Set if in left/right border (H32: H counter >= 256; H40: >= 320)
 w562     Set if in viewport horizontally and in mode 4
 w563     Set if w562 and odd tile (H counter = multiple of 16px + 8px)
 w565     In viewport horizontally: current 16px column; in border: 4'b1111
+w566     VRAM address output enable: bits 16:14 of plane A/B tile fetch
 w568     H counter >= 320
 w569     Set on VSRAM bus access
 w570     Set to latch from VRAM to plane A hscroll bits 7:0 (see l191)
@@ -435,6 +441,8 @@ w656     Sprite height bit 1?
 w657     Sprite height bit 0?
 w663     Set if sprite height == 1 tile
 w664     Set if sprite height == 3 tiles
+w683     Set to load next sprite link (in mode 5) into sprite ID (l351)
+w684     Set to output sprite table offset for sprite Y in VRAM address bus in mode 4, also increments sprite ID (l351)
 w687     Set to latch 4th byte of cacheable sprite entry (link)
 w688     Set to latch 3rd byte of cacheable sprite entry (size)
 w689     Set to latch 1st byte of cacheable sprite entry (Y bits 9:8)
@@ -538,6 +546,7 @@ w983     Line buffer write data palette (even?)
 w985     VRAM read enable (high logic)
 w986     VRAM lower byte write enable (high logic), goes to /WE0 (as low logic)
 w987     VRAM upper byte write enable (high logic), goes to /WE1 (as low logic)
+w990     Control pin direction of RD and AD (0: output, 1: input, I think?)
 w991     VRAM write to lower byte (from w286, or l571 which is latched w286)
 w999     VRAM write to upper byte (from w288, or l585 which is latched w288)
 w1007    Alternate between /SE0 and /SE1 in 128k mode, or stick to /SE0 only when not 128k
@@ -547,9 +556,16 @@ w1011    Used for VRAM address computation (w1010 OR bit 9 in m4)
 w1012    Physical VRAM address (upper half, latched into l592)
 w1013    VRAM address MSB to use
 w1014    Physical VRAM address (lower half, latched into l593)
+w1018    VRAM address bus output (connected to AD_o[7:0])
+w1019    VRAM data bus output (connected to RD_o[7:0])
 w1021    Set on CRAM bus access
-w1027    ??? (requires S/H enabled, low sprite priority, two more things)
-w1028    ??? (requires S/H enabled, high sprite priority, two more things)
+w1022    [layer mux block]  a_pri ?  s_pri : ~b_pri
+w1023    [layer mux block] ~a_pri &  s_pri &  b_pri
+w1024    [layer mux block]  a_pri & ~s_pri & ~b_pri
+w1025    [layer mux block] ~a_pri & ~s_pri &  b_pri
+w1026    [layer mux block]  a_pri & ~s_pri &  b_pri
+w1027    [layer mux block] ~a_pri & ~s_pri & ~b_pri & S/H enable
+w1028    [layer mux block] ~a_pri &  s_pri & ~b_pri & S/H enable
 w1029    S/H enable
 w1030    Is it a S/H sprite pixel?
 w1031    Is it a S/H sprite pixel OR no sprite pixel?
@@ -764,6 +780,7 @@ l195     Bits 9:8 of horizontal scroll in mode 5 for plane B
 l196     VRAM address output enable: bits 4:0 of plane A/B tile fetch
 l197     Fetching plane A (0) or plane B (1)?
 l198     Bit 1 of plane A/B tile address to fetch (inverted)
+l199     VRAM address output enable: bits 13:5 of plane A/B tile fetch
 l202     [???] (there's window tilemap fetch on VRAM bus)
 l203     (pipeline, goes to l204)
 l204     (pipeline, goes to l205)
@@ -784,37 +801,53 @@ l220     Plane A/B 1st tilemap fetch upper byte
 l221     Plane A/B 2nd tilemap fetch lower byte
 l222     Plane A/B 2nd tilemap fetch upper byte
 l236     [???] Amount to shift plane to the right? (loaded with bits 3:0 of hscroll)
+l237     Plane B tile pixels 7:6
+l238     Plane B tile pixels 5:4
+l239     Plane B tile pixels 3:2 (m5), plane A bitplane 3 (m4)
+l240     Plane B tile pixels 1:0 (m5), plane A bitplane 2 (m4)
 l241     [???] X offset within plane (A?) output? (loaded with l236; counts up every dot)
 l251     Set while fetching tilemap data (1st tile) bits 7:0 (see w615)
 l252     Set while fetching tilemap data (1st tile) bits 15:8 (see w616)
 l253     Set while fetching tilemap data (2nd tile) bits 7:0 (see w617)
 l254     Set while fetching tilemap data (2nd tile) bits 15:8 (see w618)
+l261     Plane A tile pixels 7:6
+l262     Plane A tile pixels 5:4
+l263     Plane A tile pixels 3:2 (m5), plane A bitplane 1 (m4)
+l264     Plane A tile pixels 1:0 (m5), plane A bitplane 0 (m4)
 l269     Plane A color index to show (from w607, to l270)
 l270     Plane A color index to show (from l269, to color bus)
-l273     [???] (found a lot in the layer mux block)
+l271     Plane A color palette to show (from w604;w603, to l272)
+l272     Plane A color palette to show (from l271, to color bus)
+l273     Plane A priority to show (from w605, to l274 and mux block)
+l274     Plane A priority to show (from l273, to color bus)
 l293     VRAM address bits 6:1 (used in VSRAM block)
 l311     [???] X offset within plane (B?) output? (loaded with l236, MSB inverted; counts up every dot)
 l314     (pipeline, goes to l315)
 l315     (pipeline, goes to l316)
 l316     Set to start fetching of hscroll table data (see l213)
 l318     Plane B color index to show (from w647, to l319)
-l319     Plane B color index to show (from l319, to color bus)
-l320     [???] (found a lot in the layer mux block)
+l319     Plane B color index to show (from l318, to color bus)
+l320     Plane B priority to show (from w637, to l321 and mux block)
+l321     Plane B priority to show (from l320, to color bus)
+l322     Plane B color palette to show (from w636;w635, to l323)
+l323     Plane B color palette to show (from l322, to color bus)
 l327     (see l328 -> l332)
 l328     (see l332)
 l332     { sat_size, sat_link }
+l351     Current sprite ID being processed
+l352     Used to stretch out l353 one cycle longer
 l363     Is VRAM address within sprite cache range (upper byte) (from w693)
 l364     Is VRAM address within sprite cache range (lower byte) (from w694)
 l398     Sprite index to access (from w696, to l399)
 l399     Sprite index to access (from l398, to l400)
 l400     Sprite index to access (from l399, to l403..l409 via w752)
-l403     Sprite index to read, bit 0 (from l400 via w752, to w757);
-l404     Sprite index to read, bit 1 (from l400 via w752, to w757);
-l405     Sprite index to read, bit 2 (from l400 via w752, to w757);
-l406     Sprite index to read, bit 3 (from l400 via w752, to w757);
-l407     Sprite index to read, bit 4 (from l400 via w752, to w757);
-l408     Sprite index to read, bit 5 (from l400 via w752, to w757);
-l409     Sprite index to read, bit 6 (from l400 via w752, to w757);
+l403     Sprite index to read, bit 0 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l404     Sprite index to read, bit 1 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l405     Sprite index to read, bit 2 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l406     Sprite index to read, bit 3 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l407     Sprite index to read, bit 4 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l408     Sprite index to read, bit 5 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l409     Sprite index to read, bit 6 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
 l413     Sprite hflip latch
 l414     Sprite palette latch
 l415     Sprite priority latch
