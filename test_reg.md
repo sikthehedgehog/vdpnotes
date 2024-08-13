@@ -55,3 +55,7 @@ Writing to `$C0001C`:
 * Bit 9: when set, the HL pin will force a plane A tile fetch.
 * Bit 10: when set, the HL pin will force a plane B tile fetch.
 * Bits 15:11 seem to be unused.
+
+## Test register $F
+
+Writing to `$C0001C` will reset the VDP (as if its /RESET pin had been asserted), regardless of what you write. This register is write-only.
