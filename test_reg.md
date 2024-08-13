@@ -16,6 +16,14 @@ Writing to this port selects what test register to use in port $C0001C.
 
 Writing to `$C0001C`:
 
+* Bit 0 only is useful when VDP is configured to output the color bus: it replaces color bus bit 6 with the layer priority.
+* Bit 1 changes how DMA source and length increment works.
+    - `0` = increment by 1.
+    - `1` = increment by 256.
+* Bit 2 apparently only takes effect in SMS mode (!!): when set, it exposes the missing HV counter bits in the upper byte of the data bus (which is normally unreachable to the Z80).
+    - Bit 8 is X coordinate bit 0, inverted
+    - Bits 10:9 are Y coordinate bits 9:8, inverted
+* Bit 3 forces the line counter for the hblank interrupt to be loaded with the value of VDP register $0A *now*.
 * Bit 5 changes whether the VRAM address is multiplexed (row/column) or output as-is.
     - `0` = alternate between row and columns on `AD[7:0]` (VRAM address bus)
     - `1` = put the whole address on `{RD[7:0],AD[7:0]}` (VRAM data and address bus)
@@ -25,6 +33,7 @@ Writing to `$C0001C`:
     - `10` = force enable plane A
     - `11` = force enable plane B
     - Note: must be `00` for background plane to display.
+* Bits 11:9 override PSG output. When bit 9 is set, bits 11:10 select a PSG channel to output and the rest are muted.
 * Bit 15 seems to be unused.
 
 The way VDP implements multiplexers is that each input is gated and then merged. The layer mux select is a _huge_ string of this, and when bits 8:7 are used to forcefully enable a plane that shouldn't be displayed, it'll interfere with the plane that's supposed to show up (this seems to be a bus fight, in many later VDPs it tends to look like an AND but it may also show up as noise instead).

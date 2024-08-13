@@ -56,7 +56,7 @@ m5 tilemap fetch (from PLA to address): 2 dots
    w477 >> l118 = w557 >> l201 = w558
    w478 >> l119 = w556 >> l200 = w558
 
-plane A tile data (from PLA to latch): 4 dots
+plane A 1st tile data (from PLA to latch): 4 dots
 (2.5, 3, 3.5, 4 dots for each byte, respectively)
    w507 >> l267 >> l268 > l227 = w588 = l226
    w507 >> l267 >> l268 > l227 > l228 = w589 = l225

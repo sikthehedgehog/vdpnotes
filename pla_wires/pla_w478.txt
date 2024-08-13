@@ -1,5 +1,6 @@
 // Plane B tilemap fetches in mode 5
-// More plane A tilemap fetches in mode 4? (but w477 already covers that, may be a side effect)
+// More plane A tilemap fetches in mode 4? (probably related to how it shares
+// the plane A and B latches for the background in mode 4)
 
 	assign w478 = pla_hcnt1[49] | pla_hcnt1[55] | pla_hcnt1[56];
 

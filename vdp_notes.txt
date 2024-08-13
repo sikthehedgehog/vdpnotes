@@ -30,6 +30,9 @@ w63      Start DMA copy or fill
 w64      Assert BGACK (high logic)
 w65      Swap status port bits 1:0 with 9:8 (req: SMS mode, mode 5, mirror status port, wtf?)
 w66      Set sprite overflow flag
+w67      Set to count down the counter for next hblank interrupt
+w68      (not sure, but also part of the logic to load the hblank int line counter)
+w69      Set to load line counter for next hblank interrupt
 w70      68k within VDP address range (address must be 110xx000 xxxxxxxx 000xxxxx)
 w71      Output extra V and H counter bits over CPU data bus (test feature, SMS mode only)
 w72      Status port PAL bit (or FIFO full if w65 set)
@@ -60,7 +63,7 @@ w96      Write enable for test port $7
 w97      Read enable for test port $7
 w98      Write enable for test port $8
 w99      Read enable for test port $8
-w100     Read enable for test port $F? (works different than usual)
+w100     Write enable for test port $F
 w101     DRAM row and column mux select (passed to w103)
 w103     RA output, color bus vs. DRAM address mux (involves reg $0B bit 7 and w101)
 w104     DRAM ASEL signal (involves reg $0B bit 7)
@@ -293,6 +296,7 @@ w382     reg_test1[6:4] == 3'h3 (forces w385 high)
 w383     reg_test1[6:4] == 3'h4 (forces w394 high)
 w385     Timing signal: fetch plane A or B tile data (1st half) (from l125)
 w386     (part of the expression in w359)
+w389     Set to show pixels within the display area? (uses the DISP bit here)
 w394     Timing signal: fetch plane A or B tile data (2nd half) (from l126)
 w395     (part of the expression in w359)
 w396     Hsync (for current mode)
@@ -357,10 +361,10 @@ w502     H Timing signal: increment V counter (low logic)
 w504     H Timing signal: H counter = 0
 w505     H Timing signal: VSRAM read in full vscroll? (low logic), when F flag is cleared in SMS mode
 w506     H Timing signal: VSRAM read in column vscroll? (H counter is multiple of 8px (0, 8, 16, 24...504))
-w507     H Timing signal: H counter multiple of 8px + 7 (mode 4), multiple of 16px + 7 (mode 5)
-w508     H Timing signal: H counter multiple of 16px + 15
+w507     H Timing signal: latch tile data for plane A (H counter multiple of 8px +7 (mode 4), multiple of 16px +7 (mode 5))
+w508     H Timing signal: latch tile data for plane B (H counter multiple of 16px +15)
 w510     H Timing signal: 3px after sprite X & tile ID fetch in mode 5 (to l145)
-w512     H Timing signal: H counter multiple of 16px + 3
+w512     H Timing signal: something to do with scroll (H counter multiple of 16px +3)
 w515     VScroll value to work with (VSRAM output in mode 5, register $09 in mode 4)
 w516     Set to latch a VSRAM read into l180
 w519     Clear when vscroll inhibit should kick in, set otherwise
@@ -656,7 +660,7 @@ l31      Register write enable pipeline (from l34, to w205)
 l32      Register write enable pipeline (from w193, to l33 and l34)
 l33      Register write enable pipeline (from l32, to l34)
 l34      Register write enable pipeline (from l32 and l33, to l31)
-l35      Current VRAM address (17-bit)
+l35      Current VRAM address (17-bit), probably used by DMA?
 l36      FIFO address entry #1 (17-bit)
 l37      FIFO address entry #0 (17-bit)
 l38      FIFO address entry #3 (17-bit)

@@ -1,3 +1,6 @@
+// Latching hscroll for a scroll plane, I think?
+// (seems to do it for plane B, not sure if plane A too?)
+
 	assign w511 = pla_hcnt2[1];
 
 	assign pla_hcnt2[1] = l106 == 9'd507;
