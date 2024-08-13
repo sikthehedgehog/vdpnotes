@@ -33,6 +33,14 @@ The way VDP implements multiplexers is that each input is gated and then merged.
 
 Writing to `$C0001C`:
 
+* Bit 0 has two effects:
+    - It selects Z80/PSG clock. When `0` it's the usual 3.58MHz, while when `1` it passes the 68000 clock to it instead.
+    - It also seems to force the use of EDCLK as if `RS0` had been set (on a Mega Drive, this would affect H32 mode's normal functionality).
+* Bit 1 controls EDCLK pin direction:
+    - `0`: EDCLK is input to VDP (used as DCLK when `RS0` is set).
+    - `1`: EDCLK is output from VDP (it outputs the internally generated DCLK).
+* Bit 2: when set, the V counter is frozen by default, then it will increment every dot (2 DCLK) where the /BG pin is high.
+* Bit 3: when set, the H counter is frozen by default, then it will increment every dot (2 DCLK) where the /INTAK pin is high.
 * Bits 6:4 seem to be used to force VDP to do memory fetches, though I'm not sure how it works exactly. The following combinations are known to select something:
   - `000`: nothing (normal)
   - `001`: plane A tilemap table
@@ -41,7 +49,8 @@ Writing to `$C0001C`:
   - `100`: ??? (checked by `w383`)
   - `101`: hscroll table
 * Bit 7: when set, the HL pin will force a hscroll table fetch. Also forces window registers to take effect immediately instead of being latched on V counter increment only.
-    - (actually not sure on this bit, I need to recheck what it's actually forcing to be fetched)
+    - Actually not sure on this bit, I need to recheck what it's actually forcing to be fetched.
+    - It seems to force VSRAM to be constantly latched as well? (see `w513`)
 * Bit 8: when set, the HL pin will force a plane tilemap fetch.
 * Bit 9: when set, the HL pin will force a plane A tile fetch.
 * Bit 10: when set, the HL pin will force a plane B tile fetch.
