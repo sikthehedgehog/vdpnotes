@@ -325,8 +325,11 @@ w436     Do V counter increment
 w437     Do V counter wraparound
 w439     Status port VB bit (0 = active scan, 1 = passive scan)
 w446     Status port ODD bit (0 = even field, 1 = odd field)
+w454     External sync enabled and H counter = 0 on the line vblank begins
+w455     External sync disabled and H counter = 0 on the line vblank begins
 w457     Start of vblank (opposite of w469, latched from l170), also latches interlaced mode
 w458     Reset OR start of vblank
+w459     H counter = 0 on the line vblank begins
 w466     Opposite of w439 (1 = active scan, 0 = passive scan)
 w467     V Timing signal: V counter wraparound point
 w468     V Timing signal: (low logic) end of vblank / start of vertical visible area
@@ -364,7 +367,7 @@ w506     H Timing signal: VSRAM read in column vscroll? (H counter is multiple o
 w507     H Timing signal: latch tile data for plane A (H counter multiple of 8px +7 (mode 4), multiple of 16px +7 (mode 5))
 w508     H Timing signal: latch tile data for plane B (H counter multiple of 16px +15)
 w510     H Timing signal: 3px after sprite X & tile ID fetch in mode 5 (to l145)
-w512     H Timing signal: something to do with scroll (H counter multiple of 16px +3)
+w512     H Timing signal: something to do with hscroll (H counter multiple of 16px +3)
 w515     VScroll value to work with (VSRAM output in mode 5, register $09 in mode 4)
 w516     Set to latch a VSRAM read into l180
 w519     Clear when vscroll inhibit should kick in, set otherwise
@@ -422,7 +425,10 @@ w587     Plane A/B priority flag (read from VRAM), adjusted for mode 4/5
 w592     ??? (copies l223..l226 to l232..l235, l243..l246 to l255..l258, l259 to l260 when set)
 w606     Which pixel within a tile to show for plane A
 w607     Plane A color index to show (to l269)
+w608     (part of the expression for w609 to account for mode 4 and 5 differences)
+w610     ??? (latched on 1st dot, see w611 below one dot clock later)
 w611     ??? (copies l232..l235 to l237..l240, l260 to l265 when set)
+w614     Set 1 dot after w512 (via l159), after being manipulated by the test registers
 w615     Set to latch lower byte of plane A/B 1st tilemap fetch
 w616     Set to latch upper byte of plane A/B 1st tilemap fetch
 w617     Set to latch lower byte of plane A/B 2nd tilemap fetch
@@ -551,6 +557,8 @@ w983     Line buffer write data palette (even?)
 w985     VRAM read enable (high logic)
 w986     VRAM lower byte write enable (high logic), goes to /WE0 (as low logic)
 w987     VRAM upper byte write enable (high logic), goes to /WE1 (as low logic)
+w988     1 = assert VRAM CAS (/CAS1 goes low)
+w989     1 = assert VRAM RAS (/RAS1 goes low)
 w990     Control pin direction of RD and AD (0: output, 1: input, I think?)
 w991     VRAM write to lower byte (from w286, or l571 which is latched w286)
 w999     VRAM write to upper byte (from w288, or l585 which is latched w288)
@@ -810,7 +818,7 @@ l237     Plane B tile pixels 7:6
 l238     Plane B tile pixels 5:4
 l239     Plane B tile pixels 3:2 (m5), plane A bitplane 3 (m4)
 l240     Plane B tile pixels 1:0 (m5), plane A bitplane 2 (m4)
-l241     [???] X offset within plane (A?) output? (loaded with l236; counts up every dot)
+l241     [???] X offset within plane (A?) output? (loaded with l236 on w614; counts up every dot)
 l251     Set while fetching tilemap data (1st tile) bits 7:0 (see w615)
 l252     Set while fetching tilemap data (1st tile) bits 15:8 (see w616)
 l253     Set while fetching tilemap data (2nd tile) bits 7:0 (see w617)

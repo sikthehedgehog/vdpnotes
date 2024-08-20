@@ -1,3 +1,9 @@
+*** !!! REDO ALL OF THIS !!!
+*** I completely misunderstood how the clocks work and honestly it's a pain to
+*** follow through absolutely everything, assume this whole file is wrong and
+*** that we need to start from scratch.
+
+
 [w495] Start of hblank: 10 dots
 [w496] End of hblank: 10 dots
 [w500] Start of hsync: 11 dots
@@ -36,6 +42,10 @@ start of hblank to hblank flag: 4 dots (m5), 3 dots (m4)
    m4: w495 >> l143 >> t30 >> l129 = w422
 start of hblank to YS: 6 dots (m5), 5 dots (m4)
    w422 >> l624 >> l614
+
+refresh slot (from PLA to VRAM pins): 3-4 dots
+   w476 >> l108 >> l588 >> l587
+   w476 >> l108 >> l588 >> l589 >> l587
 
 m5 hscroll fetch (from PLA to latch): 6 dots
 (4.5, 5, 5.5, 6 dots for each byte, respectively)
@@ -106,6 +116,15 @@ Plane B tile data (from PLA to latch to 2nd latch): 6.5 dots? (7?)
 ???
    w512 >> l159 = w614 >> l241
    w512 >> l159 = w614 >> l242 = l236
+???
+   w610 >> l266 >> w611 >> l237
+   w610 >> l266 >> w611 >> l238
+   w610 >> l266 >> w611 >> l239
+   w610 >> l266 >> w611 >> l240
+   w610 >> l266 >> w611 >> l261
+   w610 >> l266 >> w611 >> l262
+   w610 >> l266 >> w611 >> l263
+   w610 >> l266 >> w611 >> l264
 
 Alternating /SE0 and /SE1 (128k VRAM only): 0.5 dots
    w1007 > l586 = SE0/SE1
