@@ -218,7 +218,7 @@ w301     CD0 flag & doing an access?
 w302     CRAM write enable, upper byte (goes to l601)
 w303     CRAM write enable, lower byte (goes to l602)
 w304     Updates l94 and l95 (the bytes that are used for FIFO writes)
-w305     FIFO read index increment size (0: by half entry, 1: by one entry)
+w305     FIFO read index increment size (1: by half entry, 0: by one entry)
 w306     Set when FIFO read index == 3
 w307     Set when FIFO read index == 2
 w308     Set when FIFO read index == 1
@@ -343,8 +343,8 @@ w475     V Timing signal: (low logic) line 511
 w476     H Timing signal: refresh slot (goes to l108)
 w477     H Timing signal: fetch plane A tilemap data
 w478     H Timing signal: fetch plane B tilemap data
-w479     H Timing signal: fetch plane A or B tile data (1st half)
-w480     H Timing signal: fetch plane A or B tile data (2nd half)
+w479     H Timing signal: set up fetch address plane A or B tile data (1st half)
+w480     H Timing signal: set up fetch address plane A or B tile data (2nd half)
 w481     H Timing signal: fetch sprite X and tile ID
 w482     H Timing signal: fetch sprite tile (fed into l141)
 w483     H Timing signal: odd pixels (for what is this used?)
@@ -352,7 +352,7 @@ w484     H Timing singal: m4 sprite tile fetch (1st half)
 w485     H Timing signal: m4 sprite X / tile ID fetches? (active scan only, passive scan is weird) (to l155)
 w486     H Timing signal: m4 sprite Y fetches?
 w487     H Timing signal: m4 fetch sprite Y data???, m5 scan sprite Y data? (fed into l147)
-w488     H Timing signal: ??? (fetch hscroll table?)
+w488     H Timing signal: fetch hscroll table (fed into l148)
 w493     H Timing signal: start of horizontal display (end of left border)
 w494     H Timing signal: end of horizontal display (start of right border)
 w495     H Timing signal: start of hblank
