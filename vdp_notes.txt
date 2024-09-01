@@ -322,14 +322,19 @@ w433     (used to compute w428, see above)
 w434     (used to compute w428, see above)
 w435     (used to compute w428, see above)
 w436     Do V counter increment
-w437     Do V counter wraparound
+w437     Do V counter wraparound/reload (any reason)
+w438     Do V counter wraparound from internal sync (i.e. H and V are at the right place)
 w439     Status port VB bit (0 = active scan, 1 = passive scan)
-w446     Status port ODD bit (0 = even field, 1 = odd field)
-w454     External sync enabled and H counter = 0 on the line vblank begins
-w455     External sync disabled and H counter = 0 on the line vblank begins
+w446     Status port ODD bit (0 = even field, 1 = odd field) [1-bit "counter", not actually a wire!!]
+w451     Clear even/odd flag (force even flag)
+w454     Used by w451 and w456, external sync enabled and H counter = 0 on the line vblank begins
+w455     Toggle even/odd flag (external sync disabled and H counter = 0 on the line vblank begins)
+w456     Set even/odd flag (force odd flag, goes to l168 instead of directly to w446)
 w457     Start of vblank (opposite of w469, latched from l170), also latches interlaced mode
 w458     Reset OR start of vblank
-w459     H counter = 0 on the line vblank begins
+w459     Used by w454 and w455, H counter = 0 on the line vblank begins (delayed by 1 dclk)
+w460     External sync and pulse from w464 (1 cycle later)
+w462     Combines reset and l167 (start of top border / end of vblank)
 w466     Opposite of w439 (1 = active scan, 0 = passive scan)
 w467     V Timing signal: V counter wraparound point
 w468     V Timing signal: (low logic) end of vblank / start of vertical visible area
@@ -360,7 +365,7 @@ w496     H Timing signal: end of hblank
 w499     H Timing signal: end of equalization pulse (11px early?)
 w500     H Timing signal: start of hsync (11px early), start of back porch (2px early)
 w501     H Timing signal: end of hsync (11px early)
-w502     H Timing signal: increment V counter (low logic)
+w502     H Timing signal: increment or warparound V counter (low logic)
 w504     H Timing signal: H counter = 0
 w505     H Timing signal: VSRAM read in full vscroll? (low logic), when F flag is cleared in SMS mode
 w506     H Timing signal: VSRAM read in column vscroll? (H counter is multiple of 8px (0, 8, 16, 24...504))
@@ -772,6 +777,7 @@ l163     V Timing signal: ??? (always 3 lines after w473, end of the extra sync 
 l164     V Timing signal: end of vsync / start of top TV vblank (from w473)
 l165     V Timing signal: start of vsync (always 3 lines before w473) (from w472)
 l167     V Timing signal: start of top border / end of top TV blank (from w471)
+l168     Set even/odd flag (force odd flag)
 l170     Not start of vblank (from w469)
 l173     H Timing signal: (whatever w492 is, from l122)
 l178     Bit 3 of H counter (related to tilemap fetches?)

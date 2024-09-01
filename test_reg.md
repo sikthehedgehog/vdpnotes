@@ -65,6 +65,18 @@ Writing to `$C0001C`:
 * Bit 10: when set, the HL pin will force a plane B tile fetch.
 * Bits 15:11 seem to be unused.
 
+## Test register $2
+
+Writing to `$C0001C` changes the V counter's value to bits 8:0 from the data bus.
+
+Reading from `$C0001C` returns a bunch of flags in bits 7:0 of the data bus (to be documented).
+
+## Test register $3
+
+Writing to `$C0001C` changes the H counter's value to bits 8:0 from the data bus.
+
+Reading from `$C0001C` returns a bunch of flags in bits 13:0 of the data bus (to be documented).
+
 ## Test register $F
 
 Writing to `$C0001C` will reset the VDP (as if its /RESET pin had been asserted), regardless of what you write. This register is write-only.
