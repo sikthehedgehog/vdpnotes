@@ -1,5 +1,5 @@
-// End of hblank
-// This is delayed by... 10 dots???
+// End of hblank flag
+// Delayed by 2px in mode 4, 10px in mode 5
 
 	assign w496 = pla_hcnt2[32] | pla_hcnt2[33];
 

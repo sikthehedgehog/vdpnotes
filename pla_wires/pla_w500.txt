@@ -1,7 +1,10 @@
-// 2 dots before back porch
-// 11 dots before start of hsync
+// Start of hsync
+// Takes 4 pixels to reach the /HSYNC pin in mode 4
+// Takes 11 pixels to reach the /HSYNC pin in mode 5
 
 	assign w500 = pla_hcnt2[22] | pla_hcnt2[23];
 
 	assign pla_hcnt2[23] = ~reg_rs1 & l106 == 9'd292;  // H32   256 + 36
 	assign pla_hcnt2[22] = reg_rs1 & l106 == 9'd358;   // H40   320 + 38
+
+// 2 dots before back porch (is this actually relevant?)

@@ -275,8 +275,8 @@ w358     (part of the expression in w359)
 w359     Free VRAM slot (CPU access allowed) (latched in l109)
 w360     Set if hpos = 258 (H32) or 322 (H40), when F flag is cleared, from l117
 w361     Do H counter wraparound
-w362     Increment H counter by 1px
-w363     Increment H counter by 1px (involves test register #1 bit 3, see w362...)
+w362     Increment H counter by 1px (when test register #1 bit 3 is not set)
+w363     Increment H counter by 1px (including also test register)
 w364     Value to load when H counter wraps around
 w365     (used to compute w364, see above)
 w366     (used to compute w364, see above)
@@ -360,11 +360,11 @@ w487     H Timing signal: m4 fetch sprite Y data???, m5 scan sprite Y data? (fed
 w488     H Timing signal: fetch hscroll table (fed into l148)
 w493     H Timing signal: start of horizontal display (end of left border)
 w494     H Timing signal: end of horizontal display (start of right border)
-w495     H Timing signal: start of hblank
-w496     H Timing signal: end of hblank
+w495     H Timing signal: start of hblank (hblank flag set)
+w496     H Timing signal: end of hblank (hblank flag clear)
 w499     H Timing signal: end of equalization pulse (11px early?)
-w500     H Timing signal: start of hsync (11px early), start of back porch (2px early)
-w501     H Timing signal: end of hsync (11px early)
+w500     H Timing signal: start of hsync (early 4px in m4, 11px in m5), start of back porch (2px early)
+w501     H Timing signal: end of hsync (early 4px in m4, 11px in m5)
 w502     H Timing signal: increment or warparound V counter (low logic)
 w504     H Timing signal: H counter = 0
 w505     H Timing signal: VSRAM read in full vscroll? (low logic), when F flag is cleared in SMS mode
@@ -741,6 +741,7 @@ l105     V counter
 l106     H counter
 l108     H Timing signal: refresh slot (from w476, introduces 1 cycle of latency)
 l109     Free VRAM slot (CPU access allowed) (latched from w359)
+l110     H Timing signal: H counter = 0 (latched from w504, introduces 1 cycle of latency)
 l112     H Timing signal: H counter wraparound (from w490, introduces 1 cycle of latency)
 l113     Used to do edge detection of l121
 l115     H Timing signal: increment V counter (from w502, turned high logic), latch window settings
@@ -955,9 +956,9 @@ t20      CPU lower byte strobe (set by LDS, clear by w189)
 t21      In the middle of a DATA port write
 t25      Writing command bits 15:8 (set by w164, clear by w176)
 t28      Set when a FIFO entry is flushed during DMA, reset when DMA finishes
-t30      hblank? (later delayed by 1 in m4, by 2 in m5)
-t32      hsync (equalization pulses, later delayed by 1 in m4, by 2 in m5)
-t33      hsync (normal hsync, later delayed by 1 in m4, by 2 in m5)
+t30      hblank flag? (delayed further down the line)
+t32      hsync (equalization pulses, delayed further down the line)
+t33      hsync (normal hsync, delayed further down the line)
 t37      disable color output (vertical)
 
 cpu_sel        1 = 68000, 0 = Z80

@@ -1,4 +1,6 @@
-// End of hsync (takes 11 pixels to reach the pin)
+// End of hsync
+// Takes 4 pixels to reach the /HSYNC pin in mode 4
+// Takes 11 pixels to reach the /HSYNC pin in mode 5
 
 	assign w501 = pla_hcnt2[20] | pla_hcnt2[21];
 
