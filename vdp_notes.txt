@@ -18,6 +18,7 @@ w47      CPU interrupt acknowledge (Z80)
 w48      CPU interrupt acknowledge in mode 5
 w49      Clear pending interrupts (from l9, from w48)
 w50      Reset OR read enable CTRL
+w53      Clear F flag in mode 4 on status read
 w54      Clear external interrupt pending
 w56      Clear vblank interrupt pending (F flag)
 w57      Set to trigger hblank interrupt
@@ -297,6 +298,7 @@ w383     reg_test1[6:4] == 3'h4 (forces w394 high)
 w385     Timing signal: fetch plane A or B tile data (1st half) (from l125)
 w386     (part of the expression in w359)
 w389     Set to show pixels within the display area? (uses the DISP bit here)
+w392     Part of the sequence that signals end of viewport (horizontally), goes to t29
 w394     Timing signal: fetch plane A or B tile data (2nd half) (from l126)
 w395     (part of the expression in w359)
 w396     Hsync (for current mode)
@@ -494,6 +496,11 @@ w809     in M4 = H counter + $1F4 + 1, in M5 = H counter + $1ED + 1
 w817     Line buffer write enable (global)
 w819     hclk2 only if display enabled (low logic)
 w825     Line buffer address
+w841     Set when sprite rendering during mode 5?
+w842     Set when sprite rendering during mode 4?
+w843     Seems to rearrange sprite pixel bits (mode 4 vs. mode 5) during rendering
+w843_1   Sprite pixels in mode 5 format (chunky)
+w843_2   Sprite pixels in mode 4 format (planar)
 w910     Line buffer write enable pixel #0
 w911     Line buffer write enable pixel #1
 w912     Line buffer write enable pixel #2
@@ -661,7 +668,7 @@ l10      End of interrupt acknowledge (from l9, to l11)
 l11      End of interrupt acknowledge (from l10)
 l12      [has another use with w51] Used to reset t6 two cycles after it's set (t6 -> l12 -> l13)
 l13      [has another use with w52] Used to reset t6 two cycles after it's set (t6 -> l12 -> l13)
-l14      Clear sprite overflow and collision flags on vblank
+l14      Clear sprite overflow and collision flags on vblank (F flag too if mode 4)
 l18      Select between DATA and CTRL port for writes
 l19      Select between DATA and CTRL port for reads (used by w143)
 l21      Latch pipeline during access to DATA/CTRL? (pipeline, from l22)
