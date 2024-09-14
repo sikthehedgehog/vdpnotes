@@ -1,0 +1,40 @@
+Note: counting DCLK cycles from the positive edge, but the actual amount of
+delay depends on when did the signals from the CPU arrive in the first place.
+Only use these values for comparison (e.g. to check if something happens earlier
+or later than something else in the circuit).
+
+dclk  /¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____
+clk1  ______/\__________/\__________/\__________/\__________/\____
+clk2  /\__________/\__________/\__________/\__________/\__________
+
+t13 _/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\_______________________________________
+l25 _________/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\____________________________
+l24 _______________/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\______________________
+l23 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\_______________________/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+l22 ___________________________/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\__________
+l21 _________________________________/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\____
+
+t13 = when CPU access to DATA or CTRL has been detected
+l25 = set 0.5 DCLK later, reset 2.5 DCLK later
+l24 = set 1.0 DCLK later, reset 3.0 DCLK later
+l23 = reset 1.5 DCLK later, set 3.5 DCLK later
+l22 = set 2.0 DCLK later, reset 4.0 DCLK later
+l21 = set 2.5 DCLK later, reset 4.5 DCLK later
+
+dclk  /¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____
+clk1  ______/\__________/\__________/\__________/\__________/\____
+clk2  /\__________/\__________/\__________/\__________/\__________
+
+w153 ______________________________________/¯¯¯¯¯¯¯¯¯¯¯\__________
+w154 ______________________________________/¯¯¯¯¯\________________
+w155 ____________________________________________/¯¯¯¯¯\__________
+w158 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\______________________/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+w183 __________________________________________________/¯¯¯¯¯\____
+w184_________________________________/¯¯¯¯¯¯¯¯¯¯¯\________________
+
+w153 = ~l24 &  l22 = set 3.0 DCLK later, reset 4.0 DCLK later
+w154 = ~l24 & ~l23 = set 3.0 DCLK later, reset 3.5 DCLK later
+w155 =  l23 &  l22 = set 3.5 DCLK later, reset 4.0 DCLK later
+w158 =  t13 |  l23 = reset 1.5 DCLK later, set 3.5 DCLK later
+w183 = ~l22 &  l21 = set 4.0 DCLK later, reset 4.5 DCLK later (also set on VDP reset)
+w184 = ~l25 & ~l23 = set 2.5 DCLK later, reset 3.5 DCLK later

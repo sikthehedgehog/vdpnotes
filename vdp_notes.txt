@@ -1,5 +1,5 @@
 w1       68000 read (any size)
-w2       Address == ($0xxxxx or $8xxxxx) and no CPU interrupt acknowledge (w35)?
+w2       Address == ($7xxxxx or $Fxxxxx) and no CPU interrupt acknowledge (w35)?
 w4       Release 68000 bus (used by DMA)
 w5       Request 68000 bus (used by DMA)
 w6       Clear during the 2nd and 4th cycle of a refresh slot
@@ -10,8 +10,8 @@ w11      IRQ number to assert (bit 1)
 w12      IRQ number to assert (bit 2)
 w35      No CPU interrupt acknowledge?
 w37      No CPU address strobe (68000)
-w43      Set when counter dff23..29_l2 == 127
-w44      (partial result for w43, see above)
+w43      Set when counter dff29..23_l2 == 0x7F (fed to dff14_l2)
+w44      Set when counter dff29..23_l2 >= 0x70 (fed to dff13_l2, dff15_l2)
 w45      CPU interrupt acknowledge (68000)
 w46      CPU interrupt acknowledge
 w47      CPU interrupt acknowledge (Z80)
@@ -78,7 +78,7 @@ w111     Write enable for PSG
 w112     Read enable for DATA/CTRL (SMS mode)
 w113     Read enable for DATA/CTRL
 w114     Read enable for CTRL
-w117     /DTACK?
+w117     /DTACK (but high logic, unlike the pin)
 w120     Set F flag, also sets whatever is t12 (see w121)
 w121     ??? (resets t12)
 w122     Fire the interrupt (be more specific? high or low logic?) (68k=t12, Z80=w9)
@@ -105,9 +105,11 @@ w145     (sets t18, seems related to CPU writes)
 w146     Part of /DTACK logic (all this goes to w117)
 w147     CPU strobe (either upper or lower)
 w151     (low logic) VRAM data output strobe
-w153     DATA/CTRL access strobe for w150
-w155     Select high word for next command write?
+w153     DATA/CTRL access detect, set 3.0 DCLK later, reset 4.0 DCLK later / DATA/CTRL access strobe for w150
+w154     DATA/CTRL access detect, set 3.0 DCLK later, reset 3.5 DCLK later
+w155     DATA/CTRL access detect, set 3.5 DCLK later, reset 4.0 DCLK later / Select high word for next command write?
 w156     FIFO empty or end of DMA
+w158     Set to allow detection of 68000 access
 w159     ??? (something to do with end of access latch, maybe? part of what triggers autoincrement)
 w160     Read enable for DATA
 w163     Access to DATA/CTRL
@@ -124,14 +126,16 @@ w175     Select low word for next command write? (same as w171 but with RESET th
 w176     Select high word for next command write? (same as w155 but with RESET thrown in)
 w178     CRAM read enable (goes to l623_1 -> l623_2 -> l623_3)
 w182     CD5 flag (actually combinatorial and not a latch)
-w183     (edge detects a DATA/CTRL access, l21/l22)
-w184     ??? Yet another DATA/CTRL access detect? (used by w193 when detecting register writes)
+w183     DATA/CTRL access detect, set 4.0 DCLK later, reset 4.5 DCLK later
+w184     DATA/CTRL access detect, set 2.5 DCLK later, reset 3.5 DCLK later (used by w193 when detecting register writes)
 w185     Selects between current (1) or autoincremented (0) address
 w186     (part of the logic for w187 and w188, latched through l27)
 w187     (not sure but seems to be when writes trigger inside DMA copy?)
 w188     (not sure but seems to be when writes trigger outside DMA copy?)
 w192     reg_code[1:0] != 2'h2 (not a register write)
 w193     Detected a register write? (pipelines to l31..l34,w205)
+w197     Resets t27 (used during DMA end?)
+w198     Sets t27 (used during DMA start?)
 w199     DMA copy in progress and CD4 set
 w201     [not sure how w189 is involved but] Selected VSRAM for reading (goes to l206)
 w202     [not sure how w189 is involved but] Selected CRAM for reading
@@ -671,11 +675,11 @@ l13      [has another use with w52] Used to reset t6 two cycles after it's set (
 l14      Clear sprite overflow and collision flags on vblank (F flag too if mode 4)
 l18      Select between DATA and CTRL port for writes
 l19      Select between DATA and CTRL port for reads (used by w143)
-l21      Latch pipeline during access to DATA/CTRL? (pipeline, from l22)
-l22      Latch pipeline during access to DATA/CTRL? (pipeline, from l23 to l21)
-l23      Latch pipeline during access to DATA/CTRL? (pipeline, from l24 to l22)
-l24      Latch pipeline during access to DATA/CTRL? (pipeline, from l25 to l23)
-l25      Latch pipeline during access to DATA/CTRL? (pipeline, from t13 to l24)
+l21      CPU access to DATA/CTRL detected, from 2.5 to 4.5 DCLK later
+l22      CPU access to DATA/CTRL detected, from 2.0 to 4.0 DCLK later
+l23      CPU access to DATA/CTRL detected, from 1.5 to 3.5 DCLK later (INVERTED!!)
+l24      CPU access to DATA/CTRL detected, from 1.0 to 3.0 DCLK later
+l25      CPU access to DATA/CTRL detected, from 0.5 to 2.5 DCLK later
 l31      Register write enable pipeline (from l34, to w205)
 l32      Register write enable pipeline (from w193, to l33 and l34)
 l33      Register write enable pipeline (from l32, to l34)
@@ -687,11 +691,12 @@ l38      FIFO address entry #3 (17-bit)
 l39      FIFO address entry #2 (17-bit)
 l40      (used to ensure that the w18 pulse is stable)
 l43      Set when FIFO is full
+l44      Time to flush FIFO entry (free access slot and FIFO not empty) (delayed 2 dots from w269)
 l45      (used for rising edge detection of l44)
 l46      Status port EMPT bit (0 = FIFO has data, 1 = FIFO is empty)
 l47      ??? (stores VRAM address bit 0)
 l48      Finish DMA transfer (from w244, to w4)
-l49      Time to flush FIFO entry (free access slot and FIFO not empty) (from w269)
+l49      Time to flush FIFO entry (free access slot and FIFO not empty) (delayed 1 dot from w269)
 l50      Selects between live flags and FIFO flags (used during DMA fill) (from w272)
 l51      FIFO write index (2-bit)
 l52      FIFO read index (bit -1, yes "half" an entry)
@@ -953,7 +958,7 @@ t9       Vblank interrupt pending (status port F bit)
 t10      Status port SOVR bit
 t11      Status port C bit
 t12      Set to fire the interrupt in MD mode (be more specific?)
-t13      Sets the latch pipeline during access to DATA/CTRL (I think?)
+t13      CPU access to DATA/CTRL detected
 t14      Seems to be set while VDP is waiting for data from VRAM/CRAM/VSRAM to be latched on a read
 t15      Which command byte to write next in SMS mode? (t16 gated by w154?)
 t16      Which command byte to write next in SMS mode?
