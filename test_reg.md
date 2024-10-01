@@ -27,6 +27,7 @@ Writing to `$C0001C`:
 * Bit 5 changes whether the VRAM address is multiplexed (row/column) or output as-is.
     - `0` = alternate between row and columns on `AD[7:0]` (VRAM address bus)
     - `1` = put the whole address on `{RD[7:0],AD[7:0]}` (VRAM data and address bus)
+* Bit 6 hides all layers (as if they were transparent). This happens before bits 8:7, which can override its effect (see below).
 * Bits 8:7 override layer mux enable:
     - `00` = no override (normal)
     - `01` = force enable sprite plane
