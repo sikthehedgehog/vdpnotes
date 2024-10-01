@@ -252,8 +252,8 @@ w330     NOT (68000, 64KB VRAM, CD2:1==00, byte-sized FIFO entry)
 w331     Used to select what will go in the low byte of the VRAM write
 w332     Upper XOR lower valid byte in FIFO (*not* both)
 w333     Set to swap low byte of HV counter port (used to accomodate Z80 bus)
-w334     H counter latch freerunning mode
-w335     External interrupt pulse (one cycle long!) (goes to l81)
+w334     Enable H counter latch freerunning in mode 5
+w335     External interrupt pulse (one dot long) (goes to l81, used for HV counter latch)
 w336     V counter latch enable
 w337     H counter latch enable
 w338     For w346: set if it's a VRAM read (CD3:2 == 00)
@@ -301,8 +301,8 @@ w382     reg_test1[6:4] == 3'h3 (forces w385 high)
 w383     reg_test1[6:4] == 3'h4 (forces w394 high)
 w385     Timing signal: fetch plane A or B tile data (1st half) (from l125)
 w386     (part of the expression in w359)
-w389     Set to show pixels within the display area? (uses the DISP bit here)
-w392     Part of the sequence that signals end of viewport (horizontally), goes to t29
+w389     Set while in viewport area (in H and V range and display enabled)
+w392     Combines l137 (start of right border) with reset to force border on VDP reset, goes to t29
 w394     Timing signal: fetch plane A or B tile data (2nd half) (from l126)
 w395     (part of the expression in w359)
 w396     Hsync (for current mode)
@@ -463,6 +463,7 @@ w656     Sprite height bit 1?
 w657     Sprite height bit 0?
 w663     Set if sprite height == 1 tile
 w664     Set if sprite height == 3 tiles
+w667     End of sprite list in mode 4? (checks if w666 == 208)
 w683     Set to load next sprite link (in mode 5) into sprite ID (l351)
 w684     Set to output sprite table offset for sprite Y in VRAM address bus in mode 4, also increments sprite ID (l351)
 w687     Set to latch 4th byte of cacheable sprite entry (link)
@@ -471,7 +472,7 @@ w689     Set to latch 1st byte of cacheable sprite entry (Y bits 9:8)
 w690     Set to latch 2nd byte of cacheable sprite entry (Y bits 7:0)
 w693     Is VRAM address within sprite cache range (upper byte) (goes to l363)
 w694     Is VRAM address within sprite cache range (lower byte) (goes to l364)
-w695     [???] SAT index to read?
+w695     [???] SAT index (for what?)
 w696     Sprite index to access (to l398)
 w705     reg_test_18[6:5] == 2 (low logic) Use latched sprite [other] for w770
 w706     reg_test_18[6:5] == 1 (low logic) Use latched sprite pattern l425 for w770
@@ -610,6 +611,7 @@ w1051    Set to output plane A to color bus (after override is applied, goes to 
 w1057    Set to output plane B to color bus (goes to w1058)
 w1058    Set to output plane B to color bus (after override is applied, goes to l605)
 w1061    Set to output background plane to color bus (goes to l606)
+w1062    Plane output enable? ("in visible viewport" AND reg_test0[6] == 0)
 w1065    Shadow or highlight pixel color index (part of w1030's expression)
 w1069    ??? (affected by layer override enable, involves BG color bit 6)
 w1070    ??? (affected by layer override enable, involves BG color bit 7)
@@ -645,6 +647,25 @@ w1112    reg_test0[9] & reg_test0[11:10] != 2'h0 (PSG channel override: ch1)
 w1113    reg_test0[9] & reg_test0[11:10] != 2'h1 (PSG channel override: ch2)
 w1114    reg_test0[9] & reg_test0[11:10] != 2'h2 (PSG channel override: ch3)
 w1115    reg_test0[9] & reg_test0[11:10] != 2'h3 (PSG channel override: ch4)
+
+mclk_clk1         MCLK/4 (50% cycle duty, --__ pattern)
+mclk_clk2         MCLK/5 (60% cycle duty, ---__ pattern)
+mclk_clk3         MCLK/7 (4/7 cycle duty, ----___ pattern)
+mclk_clk4         MCLK/12 (50% cycle duty, ------______ pattern)
+mclk_clk5         MCLK/15
+
+prescaler_dff3    Used for MCLK/4 generation
+prescaler_dff4    Used for MCLK/4 generation
+prescaler_dff5    Used for MCLK/5 generation
+prescaler_dff6    Used for MCLK/5 generation
+prescaler_dff7    Used for MCLK/5 generation
+prescaler_dff8    Used for MCLK/7 generation
+prescaler_dff9    Used for MCLK/7 generation
+prescaler_dff10   Used for MCLK/7 generation
+prescaler_dff11   Used for MCLK/7 generation
+prescaler_dff12   Used for MCLK/12 generation
+prescaler_dff13   Used for MCLK/12 generation
+prescaler_dff14   Used for MCLK/12 generation
 
 dff3_l2  DMA in progress
 dff22_l2 DMA transfer in progress (latched from t4)
@@ -791,7 +812,7 @@ l164     V Timing signal: end of vsync / start of top TV vblank (from w473)
 l165     V Timing signal: start of vsync (always 3 lines before w473) (from w472)
 l167     V Timing signal: start of top border / end of top TV blank (from w471)
 l168     Set even/odd flag (force odd flag)
-l170     Not start of vblank (from w469)
+l170     (low logic) Start of vblank (from w469)
 l173     H Timing signal: (whatever w492 is, from l122)
 l178     Bit 3 of H counter (related to tilemap fetches?)
 l179     Register $09 (mode 4 vscroll)
@@ -968,10 +989,12 @@ t20      CPU lower byte strobe (set by LDS, clear by w189)
 t21      In the middle of a DATA port write
 t25      Writing command bits 15:8 (set by w164, clear by w176)
 t28      Set when a FIFO entry is flushed during DMA, reset when DMA finishes
+t29      Set when in viewport area (horizontally)
 t30      hblank flag? (delayed further down the line)
 t32      hsync (equalization pulses, delayed further down the line)
 t33      hsync (normal hsync, delayed further down the line)
 t37      disable color output (vertical)
+t38      in viewport area? (vertical)
 
 cpu_sel        1 = 68000, 0 = Z80
 

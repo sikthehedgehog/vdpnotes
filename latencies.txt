@@ -53,7 +53,8 @@ hclk2 _/¯¯¯¯¯\_________________/¯¯¯¯¯\_________________/¯¯¯¯¯\___
 
 ODD flag toggle (from PLA to updated flag): 4 DCLK cycles (w446)
 Note that w469/l170 will have been already set long before this happens, so
-we won't include them here.
+we won't include them here. Also note that ODD flag *reset* (i.e. VDP reset or
+not interlaced mode) acts directly on w446 and hence has no added latency.
 
 dclk  /¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____
 clk1  ______/\__________/\__________/\__________/\__________/\__________/\____

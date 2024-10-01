@@ -1,7 +1,7 @@
 Note: this affects multiple things, I just measured a path that I know ends up
 going to the RGB DAC pins.
 
-Start of viewport in mode 4 (from PLA to output): 16 DCLK cycles
+Start of viewport (horizontal) in mode 4 (from PLA to output): 16 DCLK cycles
 
 dclk  /¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____
 clk1  ______/\__________/\__________/\__________/\__________/\__________/\____
@@ -30,7 +30,7 @@ l609--->            ----l610--->            ----l629--->
 
 
 
-Start of viewport in mode 5 (from PLA to output): 32 DCLK cycles
+Start of viewport (horizontal) in mode 5 (from PLA to output): 32 DCLK cycles
 
 dclk  /¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____/¯¯¯¯¯\_____
 clk1  ______/\__________/\__________/\__________/\__________/\__________/\____
