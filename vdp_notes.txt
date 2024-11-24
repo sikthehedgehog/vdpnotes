@@ -132,8 +132,10 @@ w185     Selects between current (1) or autoincremented (0) address
 w186     (part of the logic for w187 and w188, latched through l27)
 w187     (not sure but seems to be when writes trigger inside DMA copy?)
 w188     (not sure but seems to be when writes trigger outside DMA copy?)
+w191     Put current command address on VRAM bus (DMA destination address, I guess)
 w192     reg_code[1:0] != 2'h2 (not a register write)
 w193     Detected a register write? (pipelines to l31..l34,w205)
+w195     Put current DMA source address on VRAM bus
 w197     Resets t27 (used during DMA end?)
 w198     Sets t27 (used during DMA start?)
 w199     DMA copy in progress and CD4 set
@@ -186,6 +188,7 @@ w257     w256 when FIFO index == 1, sends entry's address to VRAM address bus
 w258     w256 when FIFO index == 0, sends entry's address to VRAM address bus
 w259     w256 when FIFO index == 3, sends entry's address to VRAM address bus
 w260     w256 when FIFO index == 2, sends entry's address to VRAM address bus
+w262     [UNUSED!!] DMA fill and w300
 w263     Set when DMA fill and FIFO empty
 w264     Increment FIFO write index; data write (through DATA port access or DMA transfer)
 w267     Set to output DMA source address to CPU address bus (also goes to l5)
@@ -194,7 +197,7 @@ w269     Time to flush FIFO entry (free access slot and FIFO not empty) (to l49)
 w270     Clears t28 when DMA is over
 w271     Sets t28 when a FIFO flush happens while in DMA
 w272     [?] Set when DMA fill can proceed? (after the initial write is done) (goes to l50)
-w273     68000 and 64KB VRAM and CD2:1 == 0 (not CRAM or VSRAM)
+w273     68000 and 64KB VRAM and CD2:1 == 0 (VRAM)
 w274     68000 and 64KB VRAM
 w276     Upper byte FIFO write strobe (68000 bus)
 w277     Upper byte FIFO write (see l55..l58)
@@ -219,6 +222,7 @@ w295     Both FIFO indices match, used to detect when FIFO becomes full or empty
 w296     Set when incrementing FIFO read index by half entry
 w297     Set when incrementing FIFO read index by one entry
 w299     ??? (VRAM address write enable? it's clocked too)
+w300     68000 and 64KB VRAM and CD2:1 == 0 (VRAM) and about to flush second byte of a FIFO entry
 w301     CD0 flag & doing an access?
 w302     CRAM write enable, upper byte (goes to l601)
 w303     CRAM write enable, lower byte (goes to l602)
@@ -291,7 +295,8 @@ w369     (used to compute w364, see above)
 w370     From external sync: H counter wraparound
 w371     reg_test1[6:4] == 3'h2
 w372     reg_test1[6:4] == 3'h2 OR 3'h0 and time for plane B tilemap fetch
-w374     vsync
+w373     actual vsync to output (selects between mode 4 or mode 5 vsyncs)
+w374     selects between vsync or hclk2 for the /VSYNC pin
 w375     external csync OR external hsync (latter when enabled)
 w378     VSRAM timing to use? (reg_vscr ? l124 : ~l117)
 w379     w378, but only when reg_test1[6:4] == 3'h0
@@ -308,17 +313,17 @@ w395     (part of the expression in w359)
 w396     Hsync (for current mode)
 w401     Start of hblank OR reset
 w403     ??? (just merges w410 with its delayed signal)
-w404     Hsync gated by hsync dir bit (comes from w396)
+w404     Hsync output gated by hsync dir bit (comes from w396)
 w410     w361 (H counter wraparound) & w416 (???)
 w411     External hsync, when enabled by reg $0C (gated from l149)
 w414     H Timing signal: start of equalization pulse
 w416     ~reg_8c_b4 & reg_80_b0 (related to sprites?)
 w419     Lets you force hscroll table fetch when reg_test1[6:4] == 3'h5
-w421     ??? Hsync for mode 4? Selects something depending on w427 (reg $00 bit 3 set in mode 5)
+w421     w427=0 pulse every hsync, w427=1 toggle every hsync?
 w422     Status port HB bit (0 = not in hblank, 1 = in hblank)
 w423     H Timing signal: start of hsync
 w425     w416 & ~reg_81_b0 => ~reg_8c_b4 & reg_80_b0 & ~reg_81_b0 (related to sprites?)
-w427     ??? Reg $00 bit 3 set in mode 5 (isn't it unused there?)
+w427     Reg $00 bit 3 set in mode 5 (selects output of w421)
 w428     Value to use V counter when it wraps around
 w429     (used to compute w428, see above)
 w430     (used to compute w428, see above)
@@ -331,7 +336,12 @@ w436     Do V counter increment
 w437     Do V counter wraparound/reload (any reason)
 w438     Do V counter wraparound from internal sync (i.e. H and V are at the right place)
 w439     Status port VB bit (0 = active scan, 1 = passive scan)
+w440     (resets t34, w442 + VDP reset)
+w442     (resets t34, from w474 via l163)
+w444     Set when vsync should end
+w445     Set when vsync should begin (same as w447, but also including reset)
 w446     Status port ODD bit (0 = even field, 1 = odd field) [1-bit "counter", not actually a wire!!]
+w447     Set when vsync should begin
 w451     Clear even/odd flag (force even flag)
 w454     Used by w451 and w456, external sync enabled and H counter = 0 on the line vblank begins
 w455     Toggle even/odd flag (external sync disabled and H counter = 0 on the line vblank begins)
@@ -372,6 +382,7 @@ w499     H Timing signal: end of equalization pulse (11px early?)
 w500     H Timing signal: start of hsync (early 4px in m4, 11px in m5), start of back porch (2px early)
 w501     H Timing signal: end of hsync (early 4px in m4, 11px in m5)
 w502     H Timing signal: increment or warparound V counter (low logic)
+w503     H Timing signal: H position of middle of the scanline (1 dot wide, used for interlaced mode)
 w504     H Timing signal: H counter = 0
 w505     H Timing signal: VSRAM read in full vscroll? (low logic), when F flag is cleared in SMS mode
 w506     H Timing signal: VSRAM read in column vscroll? (H counter is multiple of 8px (0, 8, 16, 24...504))
@@ -605,6 +616,9 @@ w1034    reg_test0[8:7] == 2'h1; (layer override: sprite)
 w1035    reg_test0[8:7] == 2'h2; (layer override: plane A)
 w1036    reg_test0[8:7] == 2'h3; (layer override: plane B)
 w1037    reg_test0[8:7] == 2'h0; (layer override: none)
+w1038    Plane A high but not opaque, B and sprite low
+w1039    Plane B high but not opaque, A and sprite low
+w1040    Plane A and B high but not opaque, sprite low
 w1044    Set to output sprite plane to color bus (goes to l603)
 w1050    Set to output plane A to color bus (goes to w1051)
 w1051    Set to output plane A to color bus (after override is applied, goes to l604)
@@ -612,6 +626,7 @@ w1057    Set to output plane B to color bus (goes to w1058)
 w1058    Set to output plane B to color bus (after override is applied, goes to l605)
 w1061    Set to output background plane to color bus (goes to l606)
 w1062    Plane output enable? ("in visible viewport" AND reg_test0[6] == 0)
+w1064    Normally brightened pixel? (plane A/B high priority and/or S/H disabled)
 w1065    Shadow or highlight pixel color index (part of w1030's expression)
 w1069    ??? (affected by layer override enable, involves BG color bit 6)
 w1070    ??? (affected by layer override enable, involves BG color bit 7)
@@ -772,6 +787,7 @@ l103     FIFO entry #3 data (lower byte)
 l104     ??? (latch for data to write? used in a lot of places)
 l105     V counter
 l106     H counter
+l107     Vsync (for mode 5, delayed from l663)
 l108     H Timing signal: refresh slot (from w476, introduces 1 cycle of latency)
 l109     Free VRAM slot (CPU access allowed) (latched from w359)
 l110     H Timing signal: H counter = 0 (latched from w504, introduces 1 cycle of latency)
@@ -790,7 +806,7 @@ l125     H Timing signal: fetch plane A or B tile data (1st half) (from w479)
 l126     H Timing signal: fetch plane A or B tile data (2nd half) (from w480)
 l129     HBLANK flag in mode 4
 l134     H Timing signal: fetch sprite table data (see w481)
-l135     ??? (Hsync for mode 5? I got lost...)
+l135     Delays hsync pulse by 7 dots (for mode 5 use)
 l136     Hsync? (high logic)
 l137     H Timing signal: end of horizontal display (start of right border) (see w494)
 l138     H Timing signal: end of equalization pulse (see w499)
@@ -967,6 +983,7 @@ l627     Green color output (0..7)
 l628     Blue color output (0..7)
 l629     Shadow color flag? (also see w1102)
 l630     Highlight color flag (see w1101/w1102 for normal/shadow)
+l663     Vsync (for mode 4)
 
 t1       Set when writing reg $17 with DMD1=0, clear when CPU bus grant (or reset)
 t2       "In DMA copy/fill" flag
@@ -993,6 +1010,7 @@ t29      Set when in viewport area (horizontally)
 t30      hblank flag? (delayed further down the line)
 t32      hsync (equalization pulses, delayed further down the line)
 t33      hsync (normal hsync, delayed further down the line)
+t35      vsync (w/o including the delay for mode 5)
 t37      disable color output (vertical)
 t38      in viewport area? (vertical)
 
@@ -1031,7 +1049,7 @@ reg_lsm1       Reg 0C:2 = interlaced mode select
 reg_ste        Reg 0C:3 = shadow/highlight enable
 reg_8c_b4      Reg 0C:4
 reg_8c_b5      Reg 0C:5
-reg_8c_b6      Reg 0C:6
+reg_8c_b6      Reg 0C:6 = select between vsync(0) or hclk2(1) for /VSYNC
 reg_rs0        Reg 0C:7 = DCLK/EDCLK select
 
 reg_86_b2      Reg 06:2 = sprite bank in mode 4
