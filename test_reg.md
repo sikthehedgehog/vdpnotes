@@ -48,7 +48,8 @@ Writing to `$C0001C`:
     - It also seems to force the use of EDCLK as if `RS0` had been set (on a Mega Drive, this would affect H32 mode's normal functionality).
 * Bit 1 controls EDCLK pin direction:
     - `0`: EDCLK is input to VDP (used as DCLK when `RS0` is set).
-    - `1`: EDCLK is output from VDP (it outputs the internally generated DCLK).
+    - `1`: EDCLK is output from VDP (it outputs the internally generated DCLK in H32 mode).
+    - Actually it outputs the actual DCLK in use (either internal DCLK if `RS0` = `0` or external EDCLK if `RS0` = `1`), but it's impossible to receive external EDCLK on real hardware due to changing the pin direction. This _should_ work with the Nuked VDP core however, as you can connect directly to both `EDCLK_i` and `EDCLK_o` (ignoring the "pin direction").
 * Bit 2: when set, the V counter is frozen by default, then it will increment every dot (2 DCLK) where the /BG pin is high.
 * Bit 3: when set, the H counter is frozen by default, then it will increment every dot (2 DCLK) where the /INTAK pin is high.
 * Bits 6:4 seem to be used to force VDP to do memory fetches, though I'm not sure how it works exactly. The following combinations are known to select something:
