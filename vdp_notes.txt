@@ -311,9 +311,10 @@ w392     Combines l137 (start of right border) with reset to force border on VDP
 w394     Timing signal: fetch plane A or B tile data (2nd half) (from l126)
 w395     (part of the expression in w359)
 w396     Hsync (for current mode)
+w398     Select between full hsync pulses and half hsync pulses
 w401     Start of hblank OR reset
 w403     ??? (just merges w410 with its delayed signal)
-w404     Hsync output gated by hsync dir bit (comes from w396)
+w404     Hsync output gated by hsync dir bit (comes from w396, goes to l136)
 w410     w361 (H counter wraparound) & w416 (???)
 w411     External hsync, when enabled by reg $0C (gated from l149)
 w414     H Timing signal: start of equalization pulse
@@ -338,10 +339,15 @@ w438     Do V counter wraparound from internal sync (i.e. H and V are at the rig
 w439     Status port VB bit (0 = active scan, 1 = passive scan)
 w440     (resets t34, w442 + VDP reset)
 w442     (resets t34, from w474 via l163)
+w441     t34 (the 3 lines post-vsync) but only in mode 5
+w443     t35 (the 3 lines in vsync) but only in mode 5
 w444     Set when vsync should end
 w445     Set when vsync should begin (same as w447, but also including reset)
 w446     Status port ODD bit (0 = even field, 1 = odd field) [1-bit "counter", not actually a wire!!]
 w447     Set when vsync should begin
+w448     (duplicated circuit, same as w445)
+w449     Related to hsync, set one dot after w503 (middle of scanline) and/or if field is EVEN
+w450     t36 (the 3 lines pre-vsync) but only in mode 5
 w451     Clear even/odd flag (force even flag)
 w454     Used by w451 and w456, external sync enabled and H counter = 0 on the line vblank begins
 w455     Toggle even/odd flag (external sync disabled and H counter = 0 on the line vblank begins)
@@ -355,7 +361,7 @@ w466     Opposite of w439 (1 = active scan, 0 = passive scan)
 w467     V Timing signal: V counter wraparound point
 w468     V Timing signal: (low logic) end of vblank / start of vertical visible area
 w469     V Timing signal: (low logic) start of vblank / end of vertical visible area
-w470     V Timing signal: end of bottom border / start of bottom TV blank
+w470     V Timing signal: end of bottom border / start of bottom TV blank (always 3 lines before w472)
 w471     V Timing signal: start of top border / end of top TV blank
 w472     V Timing signal: start of vsync (always 3 lines before w473)
 w473     V Timing signal: end of vsync / start of top TV vblank
@@ -378,11 +384,12 @@ w493     H Timing signal: start of horizontal display (end of left border)
 w494     H Timing signal: end of horizontal display (start of right border)
 w495     H Timing signal: start of hblank (hblank flag set)
 w496     H Timing signal: end of hblank (hblank flag clear)
-w499     H Timing signal: end of equalization pulse (11px early?)
+w498     H Timing signal: start of middle equalization pulse? (4px/11px early?)
+w499     H Timing signal: end of equalization pulse (4px/11px early?)
 w500     H Timing signal: start of hsync (early 4px in m4, 11px in m5), start of back porch (2px early)
 w501     H Timing signal: end of hsync (early 4px in m4, 11px in m5)
 w502     H Timing signal: increment or warparound V counter (low logic)
-w503     H Timing signal: H position of middle of the scanline (1 dot wide, used for interlaced mode)
+w503     H Timing signal: H position of middle of the scanline (1 dot wide, used for interlaced mode, goes to l111)
 w504     H Timing signal: H counter = 0
 w505     H Timing signal: VSRAM read in full vscroll? (low logic), when F flag is cleared in SMS mode
 w506     H Timing signal: VSRAM read in column vscroll? (H counter is multiple of 8px (0, 8, 16, 24...504))
@@ -791,6 +798,7 @@ l107     Vsync (for mode 5, delayed from l663)
 l108     H Timing signal: refresh slot (from w476, introduces 1 cycle of latency)
 l109     Free VRAM slot (CPU access allowed) (latched from w359)
 l110     H Timing signal: H counter = 0 (latched from w504, introduces 1 cycle of latency)
+l111     H Timing signal: H position of middle of the scanline (1 dot wide, used for interlaced mode, from w503)
 l112     H Timing signal: H counter wraparound (from w490, introduces 1 cycle of latency)
 l113     Used to do edge detection of l121
 l115     H Timing signal: increment V counter (from w502, turned high logic), latch window settings
@@ -806,8 +814,8 @@ l125     H Timing signal: fetch plane A or B tile data (1st half) (from w479)
 l126     H Timing signal: fetch plane A or B tile data (2nd half) (from w480)
 l129     HBLANK flag in mode 4
 l134     H Timing signal: fetch sprite table data (see w481)
-l135     Delays hsync pulse by 7 dots (for mode 5 use)
-l136     Hsync? (high logic)
+l135     Delays hsync pulse by 7 dots (for mode 5 use, from w421)
+l136     Hsync (high logic)
 l137     H Timing signal: end of horizontal display (start of right border) (see w494)
 l138     H Timing signal: end of equalization pulse (see w499)
 l141     H Timing signal: fetch sprite tile (see w482)
@@ -828,8 +836,10 @@ l164     V Timing signal: end of vsync / start of top TV vblank (from w473)
 l165     V Timing signal: start of vsync (always 3 lines before w473) (from w472)
 l167     V Timing signal: start of top border / end of top TV blank (from w471)
 l168     Set even/odd flag (force odd flag)
+l169     V Timing signal: end of bottom border / start of bottom TV blank (from w470)
 l170     (low logic) Start of vblank (from w469)
 l173     H Timing signal: (whatever w492 is, from l122)
+l174     V Timing signal: V counter wraparound point (from w467)
 l178     Bit 3 of H counter (related to tilemap fetches?)
 l179     Register $09 (mode 4 vscroll)
 l180     Holds data read from VSRAM bus (updated when w516 goes high)
@@ -1010,7 +1020,9 @@ t29      Set when in viewport area (horizontally)
 t30      hblank flag? (delayed further down the line)
 t32      hsync (equalization pulses, delayed further down the line)
 t33      hsync (normal hsync, delayed further down the line)
+t34      2nd equalization pulse range? (set for 3 lines after vsync)
 t35      vsync (w/o including the delay for mode 5)
+t36      1st equalization pulse range? (set 3 for lines before vsync)
 t37      disable color output (vertical)
 t38      in viewport area? (vertical)
 
@@ -1048,7 +1060,7 @@ reg_lsm0       Reg 0C:1 = interlaced mode select
 reg_lsm1       Reg 0C:2 = interlaced mode select
 reg_ste        Reg 0C:3 = shadow/highlight enable
 reg_8c_b4      Reg 0C:4
-reg_8c_b5      Reg 0C:5
+reg_8c_b5      Reg 0C:5 = /HSYNC pin direction (output=0, input=1)
 reg_8c_b6      Reg 0C:6 = select between vsync(0) or hclk2(1) for /VSYNC
 reg_rs0        Reg 0C:7 = DCLK/EDCLK select
 
