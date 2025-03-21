@@ -1,5 +1,6 @@
 // Latching hscroll for a scroll plane, I think?
 // (seems to do it for plane B, not sure if plane A too?)
+// Seems relevant to drawing sprites in mode 4 too
 
 	assign w511 = pla_hcnt2[1];
 

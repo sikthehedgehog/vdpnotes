@@ -35,6 +35,8 @@ Writing to `$C0001C`:
     - `11` = force enable plane B
     - Note: must be `00` for background plane to display.
 * Bits 11:9 override PSG output. When bit 9 is set, bits 11:10 select a PSG channel to output and the rest are muted.
+* Bit 12 is not fully understood, but it seems to let you write sprite properties to one of the internal lists?
+* Bit 13 is not fully understood, but it seems to allow direct access to the sprite linebuffer. The linebuffer address is selected with bits 5:0 of `$C00018`.
 * Bit 15 seems to be unused.
 
 The way VDP implements multiplexers is that each input is gated and then merged. The layer mux select is a _huge_ string of this, and when bits 8:7 are used to forcefully enable a plane that shouldn't be displayed, it'll interfere with the plane that's supposed to show up (this seems to be a bus fight, in many later VDPs it tends to look like an AND but it may also show up as noise instead).

@@ -396,6 +396,7 @@ w506     H Timing signal: VSRAM read in column vscroll? (H counter is multiple o
 w507     H Timing signal: latch tile data for plane A (H counter multiple of 8px +7 (mode 4), multiple of 16px +7 (mode 5))
 w508     H Timing signal: latch tile data for plane B (H counter multiple of 16px +15)
 w510     H Timing signal: 3px after sprite X & tile ID fetch in mode 5 (to l145)
+w511     H Timing signal: H counter = 507 (-5)
 w512     H Timing signal: something to do with hscroll (H counter multiple of 16px +3)
 w515     VScroll value to work with (VSRAM output in mode 5, register $09 in mode 4)
 w516     Set to latch a VSRAM read into l180
@@ -501,8 +502,10 @@ w738     [???] w717 when reg_test0[14] == 0
 w740     Is VRAM address within sprite table range
 w741     Is VRAM address within sprite cache range
 w742     Timing signal: sprite tile fetch for mode 4 (enables VRAM bus)
+w743     Picks last relevant bit of l410 ([19] for H40, [15] for H32, [7] for m4, tied to max sprite count?)
 w751     Timing signal: sprite tile fetch for mode 4 (unfilitered, goes to w742)
 w752     Sprite index to access (from l400, latched to l403..l409)
+w753     (swaps l382 with test reg 6 writes before passing it to l410)
 w754     Timing signal: sprite table fetch for mode 4? (l411 and l412, enables VRAM bus)
 w755     Timing signal: sprite table fetch for mode 4? (l412 only)
 w756     Timing signal: sprite table fetch for mode 5? (enables VRAM bus)
@@ -515,9 +518,23 @@ w772     [???]
 w776     [???] ~(~reg_m5 | w772)
 w781     Sprite tile fetch for mode 5 (sets l428 which enables VRAM bus)
 w782     [???] Set if sprite X is not 0
+w791     (used to build an operand for w800) m5 sprite hflip 16px/32px OR m4 w/8px shift
+w792     (used to build an operand for w800) m5 sprite hflip 16px/32px
+w793     (used to build an operand for w800) m5 sprite hflip 24px/32px
+w794     (used to build an operand for w800) m5 sprite hflip 24px/32px OR m4 w/8px shift
+w795     (used to build an operand for w800) m5 sprite hflip
+w796     (used to build an operand for w800) m4 w/8px shift
+w797     (used to build an operand for w800) m5 sprite OR m4 w/8px shift
+w798     (used to build an operand for w800)
+w799     (used to build an operand for w800) base X coordinate (/8px)
+w800     Initial(?) X column for a sprite in the linebuffer (in 8px steps) (-128px offset is applied here!!)
 w809     in M4 = H counter + $1F4 + 1, in M5 = H counter + $1ED + 1
+w815     (something to do with sprite visibility, affected by test reg 0 bit 13)
 w817     Line buffer write enable (global)
 w819     hclk2 only if display enabled (low logic)
+w822     When set, use l474 as line buffer address
+w823     When set, use l475 as line buffer address
+w824     When set, use reg_test_18 as line buffer address
 w825     Line buffer address
 w841     Set when sprite rendering during mode 5?
 w842     Set when sprite rendering during mode 4?
@@ -540,6 +557,14 @@ w922     Old sprite data pixel #4 opaque
 w923     Old sprite data pixel #5 opaque
 w924     Old sprite data pixel #6 opaque
 w925     Old sprite data pixel #7 opaque
+w926     New and old sprite px #0 opaque + something else? (possibly related to collision?)
+w927     New and old sprite px #1 opaque + something else? (possibly related to collision?)
+w928     New and old sprite px #2 opaque + something else? (possibly related to collision?)
+w929     New and old sprite px #3 opaque + something else? (possibly related to collision?)
+w930     New and old sprite px #4 opaque + something else? (possibly related to collision?)
+w931     New and old sprite px #5 opaque + something else? (possibly related to collision?)
+w932     New and old sprite px #6 opaque + something else? (possibly related to collision?)
+w933     New and old sprite px #7 opaque + something else? (possibly related to collision?)
 w934     New sprite data pixel #0 opaque
 w935     New sprite data pixel #1 opaque
 w936     New sprite data pixel #2 opaque
@@ -925,6 +950,8 @@ l351     Current sprite ID being processed
 l352     Used to stretch out l353 one cycle longer
 l363     Is VRAM address within sprite cache range (upper byte) (from w693)
 l364     Is VRAM address within sprite cache range (lower byte) (from w694)
+l376     ??? (delays the output from w743 by 20 DCLK, output goes to w714)
+l382     Related to sprite fetch timing? (from w418, from l145 and l155, goes to l410)
 l398     Sprite index to access (from w696, to l399)
 l399     Sprite index to access (from l398, to l400)
 l400     Sprite index to access (from l399, to l403..l409 via w752)
@@ -935,6 +962,7 @@ l406     Sprite index to read, bit 3 (from l400 via w752, to w757); 20 (H40) or 
 l407     Sprite index to read, bit 4 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
 l408     Sprite index to read, bit 5 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
 l409     Sprite index to read, bit 6 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l410     ??? (shift register 20 bits long, tied to sprite rendering)
 l413     Sprite hflip latch
 l414     Sprite palette latch
 l415     Sprite priority latch
@@ -946,6 +974,11 @@ l424     Sprite pattern latch
 l425     Sprite X coordinate latch
 l426     [???] (gates something related to sprite X coordinate?)
 l428     [???] (there's mode 5 sprite tile fetch on VRAM bus)
+l439     Sprite hflip latch (11 DCLK later than l413)
+l440     Sprite palette latch (11 DCLK later than l414)
+l441     Sprite priority latch (11 DCLK later than l415)
+l442     Sprite width latch (11 DCLK later than l416)
+l443     Sprite X coordinate latch (11 DCLK later than l425)
 l523     Line buffer write data color #0
 l524     Line buffer write data color #1
 l525     Line buffer write data color #2
@@ -1029,9 +1062,9 @@ t38      in viewport area? (vertical)
 cpu_sel        1 = 68000, 0 = Z80
 
 reg_80_b0      Reg 00:0 = external sync
-reg_m3         Reg 00:1 = HV counter latch
+reg_m3         Reg 00:1 = mode 5 HV counter latch
 reg_80_b2      Reg 00:2 = mode 4 enable (that bit that messes with color depth)
-reg_80_b3      Reg 00:3
+reg_80_b3      Reg 00:3 = mode 4 sprite shift
 reg_ie1        Reg 00:4 = hblank interrupt enable
 reg_lcb        Reg 00:5 = left column blank
 reg_80_b6      Reg 00:6 = mode 4 hscroll inhibit
