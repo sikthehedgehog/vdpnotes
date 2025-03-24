@@ -306,6 +306,7 @@ w382     reg_test1[6:4] == 3'h3 (forces w385 high)
 w383     reg_test1[6:4] == 3'h4 (forces w394 high)
 w385     Timing signal: fetch plane A or B tile data (1st half) (from l125)
 w386     (part of the expression in w359)
+w388     Set while in viewport area and active scan (also in l470 two dots later)
 w389     Set while in viewport area (in H and V range and display enabled)
 w392     Combines l137 (start of right border) with reset to force border on VDP reset, goes to t29
 w394     Timing signal: fetch plane A or B tile data (2nd half) (from l126)
@@ -395,6 +396,7 @@ w505     H Timing signal: VSRAM read in full vscroll? (low logic), when F flag i
 w506     H Timing signal: VSRAM read in column vscroll? (H counter is multiple of 8px (0, 8, 16, 24...504))
 w507     H Timing signal: latch tile data for plane A (H counter multiple of 8px +7 (mode 4), multiple of 16px +7 (mode 5))
 w508     H Timing signal: latch tile data for plane B (H counter multiple of 16px +15)
+w509     H Timing signal: ??? (same as w510 but for mode 4?) (to l146)
 w510     H Timing signal: 3px after sprite X & tile ID fetch in mode 5 (to l145)
 w511     H Timing signal: H counter = 507 (-5)
 w512     H Timing signal: something to do with hscroll (H counter multiple of 16px +3)
@@ -492,7 +494,8 @@ w690     Set to latch 2nd byte of cacheable sprite entry (Y bits 7:0)
 w693     Is VRAM address within sprite cache range (upper byte) (goes to l363)
 w694     Is VRAM address within sprite cache range (lower byte) (goes to l364)
 w695     [???] SAT index (for what?)
-w696     Sprite index to access (to l398)
+w696     Mode 5 sprite table index to access (to l398, and eventually into a shift register made by l403..l409)
+w697     Sprite to render index
 w705     reg_test_18[6:5] == 2 (low logic) Use latched sprite [other] for w770
 w706     reg_test_18[6:5] == 1 (low logic) Use latched sprite pattern l425 for w770
 w707     reg_test_18[6:5] == 0 (low logic) Use latched sprite X coordinate for w770
@@ -503,6 +506,8 @@ w740     Is VRAM address within sprite table range
 w741     Is VRAM address within sprite cache range
 w742     Timing signal: sprite tile fetch for mode 4 (enables VRAM bus)
 w743     Picks last relevant bit of l410 ([19] for H40, [15] for H32, [7] for m4, tied to max sprite count?)
+w744     Latches VRAM data into l435 (related to sprites?)
+w749     Latches VRAM data into l436 (related to sprites?)
 w751     Timing signal: sprite tile fetch for mode 4 (unfilitered, goes to w742)
 w752     Sprite index to access (from l400, latched to l403..l409)
 w753     (swaps l382 with test reg 6 writes before passing it to l410)
@@ -510,14 +515,26 @@ w754     Timing signal: sprite table fetch for mode 4? (l411 and l412, enables V
 w755     Timing signal: sprite table fetch for mode 4? (l412 only)
 w756     Timing signal: sprite table fetch for mode 5? (enables VRAM bus)
 w757     Bottom 7 bits of mode 5 sprite table address to access
-w759     [???] l426 & reg_test0[12] (related to source of sprite X? what's l426?)
-w760     [???] l426 & ~reg_test0[12] (related to source of sprite X? what's l426?)
+w758     Input for sprites to render list bit 20 (hflip)
+w759     Mux select for w758,w761,w763,w764,w766,w768 (select when test reg 0 bit 12 = 1)
+w760     Mux select for w758,w761,w763,w764,w766,w768 (select when test reg 0 bit 12 = 0)
+w761     Input for sprites to render list bits 22:21 (palette ID)
+w763     Input for sprites to render list bit 23 (priority)
+w764     Input for sprites to render list bits 25:24 (width)
+w766     Input for sprites to render list bits 27:26 (height)
+w768     Input for sprites to render list bits 33:28 (Y offset within sprite?)
 w770     Debug: sprite metadata (yoffset[2:0],height[1:0],width[1:0],pri,pal[1:0],hflip), pattern or X
 w771     [???] Set if sprite with is 4 tiles?
 w772     [???]
+w774     Input for sprites to render list bits 10:0 (tile ID)
+w775     Input for sprites to render list bits 19:11 (X pos)
 w776     [???] ~(~reg_m5 | w772)
+w779     Tile ID offset within sprite (i.e. add to sprite's base tile ID)
+w780     What tile ID to read when fetching a sprite's 8x1px (goes to VRAM address)
 w781     Sprite tile fetch for mode 5 (sets l428 which enables VRAM bus)
 w782     [???] Set if sprite X is not 0
+w789     ??? (used by w790 and w798)
+w790     Go to previous linebuffer address? (decrements w802 by -1)
 w791     (used to build an operand for w800) m5 sprite hflip 16px/32px OR m4 w/8px shift
 w792     (used to build an operand for w800) m5 sprite hflip 16px/32px
 w793     (used to build an operand for w800) m5 sprite hflip 24px/32px
@@ -525,13 +542,24 @@ w794     (used to build an operand for w800) m5 sprite hflip 24px/32px OR m4 w/8
 w795     (used to build an operand for w800) m5 sprite hflip
 w796     (used to build an operand for w800) m4 w/8px shift
 w797     (used to build an operand for w800) m5 sprite OR m4 w/8px shift
-w798     (used to build an operand for w800)
+w798     Go to next linebuffer address? (increments w802 by +1)
 w799     (used to build an operand for w800) base X coordinate (/8px)
 w800     Initial(?) X column for a sprite in the linebuffer (in 8px steps) (-128px offset is applied here!!)
+w801     Selects between w800 and w802 (use new linebuffer address or modify current one?)
+w802     Next linebuffer address to write to? (derived from w800 and regularly incremented or decremented by 1)
+w804     Set to load a new width into l457 (width counter)
+w805     Same as w804 but limited to first halfdot, used to reload l473 (which then is loaded into l472)
+w806     Actual sprite width NOT'd, bit 0 (from l442 in mode 5, forced to 8px in mode 4), loaded into l457
+w807     Actual sprite width NOT'd, bit 1 (from l442 in mode 5, forced to 8px in mode 4), loaded into l457
+w808     Set when l457 (width counter) becomes 11, used by w804 & w805 to detect end of sprite
 w809     in M4 = H counter + $1F4 + 1, in M5 = H counter + $1ED + 1
+w810     Related to clipping sprites? (if RS1=0: w802 < 32, if RS1=1: w802 < 40)
+w811     [whatever l451 is] and viewport area + display enabled (forced to 0 otherwise)
+w812     [whatever l453 is] and viewport area + display enabled (forced to 0 otherwise)
 w815     (something to do with sprite visibility, affected by test reg 0 bit 13)
 w817     Line buffer write enable (global)
 w819     hclk2 only if display enabled (low logic)
+w821     Set while in viewport area and active scan (timing adjusted for mode 4 or 5)
 w822     When set, use l474 as line buffer address
 w823     When set, use l475 as line buffer address
 w824     When set, use reg_test_18 as line buffer address
@@ -541,6 +569,10 @@ w842     Set when sprite rendering during mode 4?
 w843     Seems to rearrange sprite pixel bits (mode 4 vs. mode 5) during rendering
 w843_1   Sprite pixels in mode 5 format (chunky)
 w843_2   Sprite pixels in mode 4 format (planar)
+w852     Writing to test reg 8 while $C00018[7:6] == 00
+w853     Writing to test reg 8 while $C00018[7:6] == 01
+w854     Writing to test reg 8 while $C00018[7:6] == 10
+w855     Writing to test reg 8 while $C00018[7:6] == 11
 w910     Line buffer write enable pixel #0
 w911     Line buffer write enable pixel #1
 w912     Line buffer write enable pixel #2
@@ -690,10 +722,23 @@ w1100    Red color bit 0 masked by M5
 w1101    Normal color flag (see l630 for highlight)
 w1102    Shadow color flag (see l630 for highlight)
 w1103    Goes to the RGB DAC taps ([0] = red, [1] = green, [2] = blue)
+w1108    (en1 for PSG noise shift register, loads the shifted data)
+w1109    (en2 for PSG noise shift register, loads the existing data)
 w1112    reg_test0[9] & reg_test0[11:10] != 2'h0 (PSG channel override: ch1)
 w1113    reg_test0[9] & reg_test0[11:10] != 2'h1 (PSG channel override: ch2)
 w1114    reg_test0[9] & reg_test0[11:10] != 2'h2 (PSG channel override: ch3)
 w1115    reg_test0[9] & reg_test0[11:10] != 2'h3 (PSG channel override: ch4)
+w1118    XOR feedback for PSG noise in "white noise" mode
+w1119    Set if PSG noise register (excluding the MSB) is NOT all zeroes (meant for "periodic noise" maybe?)
+w1120    Gates w1118's output when using "periodic noise" mode
+w1135    Set when writing to PSG square channel #1 volume
+w1136    Set when writing to PSG square channel #2 volume
+w1137    Set when writing to PSG square channel #3 frequency
+w1138    Set when writing to PSG square channel #2 frequency
+w1139    Set when writing to PSG square channel #3 volume
+w1140    Set when writing to PSG square channel #1 frequency
+w1141    Set when writing to PSG noise channel volume
+w1142    Set when writing to PSG noise channel type/pitch
 
 mclk_clk1         MCLK/4 (50% cycle duty, --__ pattern)
 mclk_clk2         MCLK/5 (60% cycle duty, ---__ pattern)
@@ -847,7 +892,7 @@ l141     H Timing signal: fetch sprite tile (see w482)
 l143     H Timing signal: start of hblank (see w495)
 l144     H Timing signal: (whatever w498 is)
 l145     H Timing signal: 3px after sprite X & tile ID fetch in mode 5 (from w510)
-l146     H Timing signal: (whatever w509 is)
+l146     H Timing signal: (whatever w509 is, maybe same as w510 but mode 4?)
 l147     H Timing signal: m4 fetch sprite Y data, m5 scan sprite Y data? (see w487)
 l148     H Timing signal: hscroll table fetch (pipeline goes to l316)
 l149     External HSync pin input
@@ -952,33 +997,44 @@ l363     Is VRAM address within sprite cache range (upper byte) (from w693)
 l364     Is VRAM address within sprite cache range (lower byte) (from w694)
 l376     ??? (delays the output from w743 by 20 DCLK, output goes to w714)
 l382     Related to sprite fetch timing? (from w418, from l145 and l155, goes to l410)
-l398     Sprite index to access (from w696, to l399)
-l399     Sprite index to access (from l398, to l400)
-l400     Sprite index to access (from l399, to l403..l409 via w752)
-l403     Sprite index to read, bit 0 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
-l404     Sprite index to read, bit 1 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
-l405     Sprite index to read, bit 2 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
-l406     Sprite index to read, bit 3 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
-l407     Sprite index to read, bit 4 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
-l408     Sprite index to read, bit 5 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
-l409     Sprite index to read, bit 6 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
-l410     ??? (shift register 20 bits long, tied to sprite rendering)
+l398     Sprite table index to access (from w696, to l399)
+l399     Sprite table index to access (from l398, to l400)
+l400     Sprite table index to access (from l399, to l403..l409 via w752)
+l403     Sprite table index to read, bit 0 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l404     Sprite table index to read, bit 1 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l405     Sprite table index to read, bit 2 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l406     Sprite table index to read, bit 3 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l407     Sprite table index to read, bit 4 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l408     Sprite table index to read, bit 5 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l409     Sprite table index to read, bit 6 (from l400 via w752, to w757); 20 (H40) or 16 (H32) entries
+l410     ??? (shift register 20 bits long, tied to sprite rendering, maybe to the above entries?)
 l413     Sprite hflip latch
 l414     Sprite palette latch
 l415     Sprite priority latch
 l416     Sprite width latch
 l417     Sprite height latch
-l418     Sprite Y offset latch
+l418     Sprite Y offset latch (goes to VRAM address)
 l420     Sprite width latch *negated*
 l424     Sprite pattern latch
 l425     Sprite X coordinate latch
-l426     [???] (gates something related to sprite X coordinate?)
-l428     [???] (there's mode 5 sprite tile fetch on VRAM bus)
+l426     [???] (gates something related to sprites queued for render?)
+l428     Enables VRAM address when reading 8x1px for a sprite (m5 only?)
+l435     Latch to hold input from VRAM, 1st byte (related to sprite data?)
+l436     Latch to hold input from VRAM, 2nd byte (related to sprite data?)
 l439     Sprite hflip latch (11 DCLK later than l413)
 l440     Sprite palette latch (11 DCLK later than l414)
 l441     Sprite priority latch (11 DCLK later than l415)
 l442     Sprite width latch (11 DCLK later than l416)
 l443     Sprite X coordinate latch (11 DCLK later than l425)
+l444     Flag indicating whether a new sprite started being drawn? (used by w801)
+l446     (from w800) Initial(?) X column for a sprite in the linebuffer (in 8px steps) (-128px offset is applied here!!)
+l447     (from w802) Next linebuffer address to write to? (derived from w800 and regularly incremented or decremented by 1)
+l448     (latches w795 to pass to l449)
+l449     Working sprite hflip (from w795->l448, used to determine drawing direction)
+l456     Set when l457 should be incremented
+l457     Counter for sprite 8x1 silvers left to draw, NOT'd (note: 11 for the last one to draw)
+l470     Set while in viewport area and active scan (from w388->l471, 2 dots (4 DCLK) later)
+l471     Set while in viewport area and active scan (from w388, 1 dot (2 DCLK) later, goes to l470)
 l523     Line buffer write data color #0
 l524     Line buffer write data color #1
 l525     Line buffer write data color #2
@@ -987,14 +1043,14 @@ l527     Line buffer write data color #4
 l528     Line buffer write data color #5
 l529     Line buffer write data color #6
 l530     Line buffer write data color #7
-l538     Line buffer write enable pixel #0 (from w910, before clock)
-l539     Line buffer write enable pixel #1 (from w911, before clock)
-l540     Line buffer write enable pixel #2 (from w912, before clock)
-l541     Line buffer write enable pixel #3 (from w913, before clock)
-l542     Line buffer write enable pixel #4 (from w914, before clock)
-l543     Line buffer write enable pixel #5 (from w915, before clock)
-l544     Line buffer write enable pixel #6 (from w916, before clock)
-l545     Line buffer write enable pixel #7 (from w917, before clock)
+l538     Line buffer write enable pixel #0 (from w902, before clock, to w910)
+l539     Line buffer write enable pixel #1 (from w903, before clock, to w911)
+l540     Line buffer write enable pixel #2 (from w904, before clock, to w912)
+l541     Line buffer write enable pixel #3 (from w905, before clock, to w913)
+l542     Line buffer write enable pixel #4 (from w906, before clock, to w914)
+l543     Line buffer write enable pixel #5 (from w907, before clock, to w915)
+l544     Line buffer write enable pixel #6 (from w908, before clock, to w916)
+l545     Line buffer write enable pixel #7 (from w909, before clock, to w917)
 l553     [???] (somehow related to w970 and l556, part of a delay line?)
 l554     [???] (somehow related to w971 and l557, part of a delay line?)
 l555     [???] (somehow related to w972 and l558, part of a delay line?)
@@ -1026,6 +1082,20 @@ l627     Green color output (0..7)
 l628     Blue color output (0..7)
 l629     Shadow color flag? (also see w1102)
 l630     Highlight color flag (see w1101/w1102 for normal/shadow)
+l635     Acknowledges the PSG write strobe internally, goes to l636 and sets t43
+l636     Set to execute a PSG command (delayed from l635 by a PSG cycle)
+l637     Used to reset PSG registers
+l640     Shift register for PSG noise
+l641     PSG frequency counter (rotating, goes to l642)
+l642     PSG frequency counter (rotating, goes to l643)
+l643     PSG frequency counter (rotating, goes to l644)
+l644     PSG frequency counter (rotating, goes to l641, used for current channel)
+l653     Latch to hold byte written to PSG port
+l654     Selected PSG register, I think? (bits 6:4 of a command with bit 7 set)
+l659     PSG square channel #1 frequency
+l660     PSG square channel #2 frequency
+l661     PSG square channel #3 frequency
+l662     PSG noise channel type/frequency
 l663     Vsync (for mode 4)
 
 t1       Set when writing reg $17 with DMD1=0, clear when CPU bus grant (or reset)
@@ -1058,6 +1128,7 @@ t35      vsync (w/o including the delay for mode 5)
 t36      1st equalization pulse range? (set 3 for lines before vsync)
 t37      disable color output (vertical)
 t38      in viewport area? (vertical)
+t43      Write enable for PSG (low logic, reset by PSG write, set by l635 when done)
 
 cpu_sel        1 = 68000, 0 = Z80
 
