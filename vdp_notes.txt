@@ -282,7 +282,7 @@ w356     reg_test1[6:4] == 3'h1 OR 3'h0 and time for plane A tilemap fetch
 w357     reg_test1[6:4] == 3'h1
 w358     (part of the expression in w359)
 w359     Free VRAM slot (CPU access allowed) (latched in l109)
-w360     Set if hpos = 258 (H32) or 322 (H40), when F flag is cleared, from l117
+w360     Set if hpos = 258+1 (H32) or 322+1 (H40), 1 dot later than when F flag is cleared (from l117)
 w361     Do H counter wraparound
 w362     Increment H counter by 1px (when test register #1 bit 3 is not set)
 w363     Increment H counter by 1px (including also test register)
@@ -543,36 +543,76 @@ w795     (used to build an operand for w800) m5 sprite hflip
 w796     (used to build an operand for w800) m4 w/8px shift
 w797     (used to build an operand for w800) m5 sprite OR m4 w/8px shift
 w798     Go to next linebuffer address? (increments w802 by +1)
-w799     (used to build an operand for w800) base X coordinate (/8px)
+w799     (used to build an operand for w800) base X coordinate
 w800     Initial(?) X column for a sprite in the linebuffer (in 8px steps) (-128px offset is applied here!!)
 w801     Selects between w800 and w802 (use new linebuffer address or modify current one?)
-w802     Next linebuffer address to write to? (derived from w800 and regularly incremented or decremented by 1)
+w802     Linebuffer address to write to (derived from w800 and regularly incremented or decremented by 1)
 w804     Set to load a new width into l457 (width counter)
 w805     Same as w804 but limited to first halfdot, used to reload l473 (which then is loaded into l472)
 w806     Actual sprite width NOT'd, bit 0 (from l442 in mode 5, forced to 8px in mode 4), loaded into l457
 w807     Actual sprite width NOT'd, bit 1 (from l442 in mode 5, forced to 8px in mode 4), loaded into l457
 w808     Set when l457 (width counter) becomes 11, used by w804 & w805 to detect end of sprite
-w809     in M4 = H counter + $1F4 + 1, in M5 = H counter + $1ED + 1
+w809     in M4 = H counter + $1F4+1 ($1F5), in M5 = H counter + $1ED+1 ($1EE)
 w810     Related to clipping sprites? (if RS1=0: w802 < 32, if RS1=1: w802 < 40)
 w811     [whatever l451 is] and viewport area + display enabled (forced to 0 otherwise)
 w812     [whatever l453 is] and viewport area + display enabled (forced to 0 otherwise)
 w815     (something to do with sprite visibility, affected by test reg 0 bit 13)
 w817     Line buffer write enable (global)
 w819     hclk2 only if display enabled (low logic)
-w821     Set while in viewport area and active scan (timing adjusted for mode 4 or 5)
-w822     When set, use l474 as line buffer address
-w823     When set, use l475 as line buffer address
+w821     NOT set while in viewport area and active scan (timing adjusted for mode 4 or 5)
+w822     When set (from w821), use l474 (from w802) as line buffer address
+w823     When set, use l475 (from w809) as line buffer address
 w824     When set, use reg_test_18 as line buffer address
 w825     Line buffer address
+w828     Set when X is right to store pixel #4 when rotating sprite pixels (see w860..w866 for #0..#7)
+w829     Timing: set to latch 2nd byte of a sprite's 8x1 px
+w830     Timing: set to latch 1st byte of a sprite's 8x1 px
+w831     (used to set up the latches that do timing of w830 and w829)
+w832     (used to set up the latches that do timing of w833 and w834)
+w833     Timing: set to latch 3rd byte of a sprite's 8x1 px
+w834     Timing: set to latch 4th byte of a sprite's 8x1 px
+w835     Timing: set to copy latched sprite 8x1 bytes into l491-l494 (the work copy)
+w836     When 0, starts the chain to pick pixels for w843 (goes to l495, and indirectly to w837)
+w837     Set=0 to pick pixels #0 and #1 for w843_1 (for mode 5, with hflip support)
+w838     Set=0 to pick pixels #2 and #3 for w843_1 (for mode 5, with hflip support)
+w839     Set=0 to pick pixels #4 and #5 for w843_1 (for mode 5, with hflip support)
+w840     Set=0 to pick pixels #6 and #7 for w843_1 (for mode 5, with hflip support)
 w841     Set when sprite rendering during mode 5?
 w842     Set when sprite rendering during mode 4?
-w843     Seems to rearrange sprite pixel bits (mode 4 vs. mode 5) during rendering
+w843     Seems to pick ONE pair of pixels and rearrange sprite pixel bits (mode 4 vs. mode 5) during rendering
 w843_1   Sprite pixels in mode 5 format (chunky)
 w843_2   Sprite pixels in mode 4 format (planar)
+w844     When w847 is set it swaps the two pixels in w843, otherwise it passes w843 as-is
+w845     If test reg 0 bit 13 = 1, swaps the pixels from l502(w844) with data from CPU bus
+w846     Opposite of w836, set when about to begin a new 8x1 sprite silver
+w847     Set to swap the pixels in w843 (see w844)
+w848     H Timing signal: any sprite tile fetch, 1 dot later (from l141 and l156)
+w849     w848, delayed by 4 dots if m5 or 5 dots if m4 (goes to l511)
 w852     Writing to test reg 8 while $C00018[7:6] == 00
 w853     Writing to test reg 8 while $C00018[7:6] == 01
 w854     Writing to test reg 8 while $C00018[7:6] == 10
 w855     Writing to test reg 8 while $C00018[7:6] == 11
+w860     Set when X is right to store pixel #0 when rotating sprite pixels
+w861     Set when X is right to Store pixel #1 when rotating sprite pixels
+w862     Set when X is right to Store pixel #2 when rotating sprite pixels
+w863     Set when X is right to Store pixel #3 when rotating sprite pixels
+w864     Set when X is right to Store pixel #5 when rotating sprite pixels (yes #4 is out of sequence, see w823)
+w865     Set when X is right to Store pixel #6 when rotating sprite pixels
+w866     Set when X is right to Store pixel #7 when rotating sprite pixels
+w872     Set to store pixel #0 when rotating sprite pixels (to l515, on clk1)
+w873     (used to simplify logic with w860..w866)
+w874     Set to store pixel #1 when rotating sprite pixels (to l516, on clk1)
+w875     Set to store pixel #2 when rotating sprite pixels (to l517, on clk1)
+w876     (used to simplify logic with w860..w866)
+w877     Forces all 8 sprite pixels to be "rotated" already (for test reg 0 bit 13, dunno when it triggers)
+w878     Set to store pixel #3 when rotating sprite pixels (to l518, on clk1)
+w879     Set to store pixel #4 when rotating sprite pixels (to l519, on clk1)
+w880     (used to simplify logic with w860..w866)
+w881     Set to store pixel #5 when rotating sprite pixels (to l520, on clk1)
+w882     Set to store pixel #6 when rotating sprite pixels (to l521, on clk1)
+w883     (used to simplify logic with w860..w866)
+w884     Set to store pixel #7 when rotating sprite pixels (to l522, on clk1)
+w885     Set when rotated sprite pixels are ready to be copied into l523..l530
 w910     Line buffer write enable pixel #0
 w911     Line buffer write enable pixel #1
 w912     Line buffer write enable pixel #2
@@ -633,9 +673,9 @@ w966     Color bit 0 of chosen sprite layer pixel (odd)
 w967     Color bit 1 of chosen sprite layer pixel (odd)
 w968     Color bit 2 of chosen sprite layer pixel (odd)
 w969     Color bit 3 of chosen sprite layer pixel (odd)
-w970     Sprite layer palette from line buffer? (affected by mode 5, involves a latch and "spr_pal")
-w971     Sprite layer priority from line buffer? (affected by mode 5, involves a latch and "spr_priority")
-w972     Sprite layer color from line buffer? (affected by mode 5, involves a latch and "spr_index")
+w970     Sprite layer palette from line buffer? (delayed by 1 dot in mode 5, see l553)
+w971     Sprite layer priority from line buffer? (delayed by 1 dot in mode 5, see l554)
+w972     Sprite layer color from line buffer? (delayed by 1 dot in mode 5, see l555)
 w973     Final sprite layer priority (forced to 0 in mode 4, used in layer mixing)
 w974     Final sprite palette (forced to 01 in mode 4, used in layer mixing)
 w975     l556 == 2'h3 (sprite S/H palette check?)
@@ -872,7 +912,7 @@ l111     H Timing signal: H position of middle of the scanline (1 dot wide, used
 l112     H Timing signal: H counter wraparound (from w490, introduces 1 cycle of latency)
 l113     Used to do edge detection of l121
 l115     H Timing signal: increment V counter (from w502, turned high logic), latch window settings
-l117     H Timing signal: VSRAM read in full vscroll, when F flag is cleared (from w505)
+l117     H Timing signal: VSRAM read in full vscroll, when F flag is cleared (from w505), 1 dot later
 l118     H Timing signal: fetch plane A tilemap data (from w477)
 l119     H Timing signal: fetch plane B tilemap data (from w478)
 l120     CSYNC pin input
@@ -888,7 +928,8 @@ l135     Delays hsync pulse by 7 dots (for mode 5 use, from w421)
 l136     Hsync (high logic)
 l137     H Timing signal: end of horizontal display (start of right border) (see w494)
 l138     H Timing signal: end of equalization pulse (see w499)
-l141     H Timing signal: fetch sprite tile (see w482)
+l141     H Timing signal: fetch sprite tile (see w482), 1 dot later
+l142     H Timing signal: (see w489), 1 dot later
 l143     H Timing signal: start of hblank (see w495)
 l144     H Timing signal: (whatever w498 is)
 l145     H Timing signal: 3px after sprite X & tile ID fetch in mode 5 (from w510)
@@ -898,7 +939,7 @@ l148     H Timing signal: hscroll table fetch (pipeline goes to l316)
 l149     External HSync pin input
 l152     End of hblank
 l155     H Timing signal: m4 sprite X / tile ID fetches? (active scan only, passive scan is weird) (from w485)
-l156     H Timing signal: (whatever w484 is)
+l156     H Timing signal: m4 sprite tile fetch (1st half), 1 dot later
 l158     HBLANK flag in mode 5 (delayed by one cycle compared to mode 4 l129)
 l162     V Timing signal: line 511 (from w475, turned high logic)
 l163     V Timing signal: ??? (always 3 lines after w473, end of the extra sync pulses maybe?) (from w474)
@@ -995,6 +1036,7 @@ l351     Current sprite ID being processed
 l352     Used to stretch out l353 one cycle longer
 l363     Is VRAM address within sprite cache range (upper byte) (from w693)
 l364     Is VRAM address within sprite cache range (lower byte) (from w694)
+l372     Set if hpos = 258+2 (H32) or 322+2 (H40), 2 dots later than when F flag is cleared (from w360)
 l376     ??? (delays the output from w743 by 20 DCLK, output goes to w714)
 l382     Related to sprite fetch timing? (from w418, from l145 and l155, goes to l410)
 l398     Sprite table index to access (from w696, to l399)
@@ -1033,16 +1075,52 @@ l448     (latches w795 to pass to l449)
 l449     Working sprite hflip (from w795->l448, used to determine drawing direction)
 l456     Set when l457 should be incremented
 l457     Counter for sprite 8x1 silvers left to draw, NOT'd (note: 11 for the last one to draw)
+l463     (used to stretch w814 for w816)
+l464     (used to stretch w951 for +1 DCLK)
 l470     Set while in viewport area and active scan (from w388->l471, 2 dots (4 DCLK) later)
 l471     Set while in viewport area and active scan (from w388, 1 dot (2 DCLK) later, goes to l470)
-l523     Line buffer write data color #0
-l524     Line buffer write data color #1
-l525     Line buffer write data color #2
-l526     Line buffer write data color #3
-l527     Line buffer write data color #4
-l528     Line buffer write data color #5
-l529     Line buffer write data color #6
-l530     Line buffer write data color #7
+l478     4th byte when reading sprite 8x1 pixels (from VRAM), latched on w830
+l479     3rd byte when reading sprite 8x1 pixels (from VRAM), latched on w829
+l480     2nd byte when reading sprite 8x1 pixels (from VRAM), latched on w833
+l481     1st byte when reading sprite 8x1 pixels (from VRAM), latched on w834
+l486     3rd byte when reading sprite 8x1 pixels (from l479), latched on w834
+l487     2nd byte when reading sprite 8x1 pixels (from l480), latched on w834
+l488     1st byte when reading sprite 8x1 pixels (from l481), latched on w834
+l491     1st byte when reading sprite 8x1 pixels (from l481->l488), latched on w835, used for processing
+l492     2nd byte when reading sprite 8x1 pixels (from l480->l487), latched on w835, used for processing
+l493     3rd byte when reading sprite 8x1 pixels (from l479->l486), latched on w835, used for processing
+l494     4th byte when reading sprite 8x1 pixels (from l478), latched on w835, used for processing
+l495     Set=0 to pick pixels #0 and #1 for w843_2 (for mode 4, without hflip support) (also used by w837)
+l496     Set=0 to pick pixels #2 and #3 for w843_2 (for mode 4, without hflip support) (also used by w838)
+l497     Set=0 to pick pixels #4 and #5 for w843_2 (for mode 4, without hflip support) (also used by w839)
+l498     Set=0 to pick pixels #6 and #7 for w843_2 (for mode 4, without hflip support) (also used by w840)
+l501     (used for w843_1 and w847) m5 sprite hflip (from w795)
+l502     Latches pair of sprite pixels (from w844) on DCLK negedge (goes to w845)
+l503     X coordinate bits 2:1 from w799 (loaded on w846, incremented if not, +1 DCLK delay), used for l504
+l504     Latches X coordinate from {l503,l506} on DCLK negedge (+1 DCLK delay from w799 and w846)
+l505     X coordinate bit 0 from w799 (loaded on w846), used for l506->l504
+l506     X coordinate bit 0 from l505 (+1 DCLK delay), used for l504 and w847
+l507     w848, delayed by 1 dot
+l508     w848, delayed by 2 dots
+l509     w848, delayed by 3 dots
+l510     w848, delayed by 4 dots
+l511     w848, delayed by 4 dots if m5 or 5 dots if m4 (from w849)
+l515     Line buffer write data color #0 (as pixels are being rotated, goes to l523)
+l516     Line buffer write data color #1 (as pixels are being rotated, goes to l524)
+l517     Line buffer write data color #2 (as pixels are being rotated, goes to l525)
+l518     Line buffer write data color #3 (as pixels are being rotated, goes to l526)
+l519     Line buffer write data color #4 (as pixels are being rotated, goes to l527)
+l520     Line buffer write data color #5 (as pixels are being rotated, goes to l528)
+l521     Line buffer write data color #6 (as pixels are being rotated, goes to l529)
+l522     Line buffer write data color #7 (as pixels are being rotated, goes to l530)
+l523     Line buffer write data color #0 (ready to use)
+l524     Line buffer write data color #1 (ready to use)
+l525     Line buffer write data color #2 (ready to use)
+l526     Line buffer write data color #3 (ready to use)
+l527     Line buffer write data color #4 (ready to use)
+l528     Line buffer write data color #5 (ready to use)
+l529     Line buffer write data color #6 (ready to use)
+l530     Line buffer write data color #7 (ready to use)
 l538     Line buffer write enable pixel #0 (from w902, before clock, to w910)
 l539     Line buffer write enable pixel #1 (from w903, before clock, to w911)
 l540     Line buffer write enable pixel #2 (from w904, before clock, to w912)
@@ -1051,12 +1129,12 @@ l542     Line buffer write enable pixel #4 (from w906, before clock, to w914)
 l543     Line buffer write enable pixel #5 (from w907, before clock, to w915)
 l544     Line buffer write enable pixel #6 (from w908, before clock, to w916)
 l545     Line buffer write enable pixel #7 (from w909, before clock, to w917)
-l553     [???] (somehow related to w970 and l556, part of a delay line?)
-l554     [???] (somehow related to w971 and l557, part of a delay line?)
-l555     [???] (somehow related to w972 and l558, part of a delay line?)
-l556     [???] (related to S/H?, latches w970's value)
-l557     [???] (related to S/H?, latches w971's value)
-l558     [???] (related to S/H?, latches w972's value)
+l553     Used to delay sprite layer palette from line buffer? (delayed by 1 dot in mode 5, see w970)
+l554     Used to delay sprite layer priority from line buffer? (delayed by 1 dot in mode 5, see w971)
+l555     Used to delay sprite layer color from line buffer? (delayed by 1 dot in mode 5, see w972)
+l556     (latches w970's value and delays it by 1 more dot)
+l557     (latches w971's value and delays it by 1 more dot)
+l558     (latches w972's value and delays it by 1 more dot)
 l571     VRAM write to upper byte (latched from w286, goes to w991)
 l574     (use unknown?) Free VRAM slot (CPU access allowed) (latched from l109)
 l585     VRAM write to lower byte (latched from w288, goes to w999)
@@ -1092,6 +1170,10 @@ l643     PSG frequency counter (rotating, goes to l644)
 l644     PSG frequency counter (rotating, goes to l641, used for current channel)
 l653     Latch to hold byte written to PSG port
 l654     Selected PSG register, I think? (bits 6:4 of a command with bit 7 set)
+l655     PSG square channel #1 volume
+l656     PSG square channel #2 volume
+l657     PSG square channel #3 volume
+l658     PSG noise channel volume
 l659     PSG square channel #1 frequency
 l660     PSG square channel #2 frequency
 l661     PSG square channel #3 frequency
