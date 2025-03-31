@@ -547,6 +547,7 @@ w799     (used to build an operand for w800) base X coordinate
 w800     Initial(?) X column for a sprite in the linebuffer (in 8px steps) (-128px offset is applied here!!)
 w801     Selects between w800 and w802 (use new linebuffer address or modify current one?)
 w802     Linebuffer address to write to (derived from w800 and regularly incremented or decremented by 1)
+w803     l499 on DCLK posedge
 w804     Set to load a new width into l457 (width counter)
 w805     Same as w804 but limited to first halfdot, used to reload l473 (which then is loaded into l472)
 w806     Actual sprite width NOT'd, bit 0 (from l442 in mode 5, forced to 8px in mode 4), loaded into l457
@@ -592,10 +593,10 @@ w847     Set to swap the pixels in w843 (see w844)
 w848     H Timing signal: any sprite tile fetch, 1 dot later (from l141 and l156)
 w849     w848, delayed by 4 dots if m5 or 5 dots if m4 (goes to l511)
 w851     Set during sprite drawing when X[2:0] is +1px (within an 8px boundary)
-w852     Writing to test reg 8 while $C00018[7:6] == 00
-w853     Writing to test reg 8 while $C00018[7:6] == 01
-w854     Writing to test reg 8 while $C00018[7:6] == 10
-w855     Writing to test reg 8 while $C00018[7:6] == 11
+w852     (low logic) Select pixels #0-#1 for test write to line buffer (writing to test reg 8 while $C00018[7:6] == 00)
+w853     (low logic) Select pixels #2-#3 for test write to line buffer (writing to test reg 8 while $C00018[7:6] == 01)
+w854     (low logic) Select pixels #4-#5 for test write to line buffer (writing to test reg 8 while $C00018[7:6] == 10)
+w855     (low logic) Select pixels #6-#7 for test write to line buffer (writing to test reg 8 while $C00018[7:6] == 11)
 w860     Set when X is right to store pixel #0 when rotating sprite pixels
 w861     Set when X is right to Store pixel #1 when rotating sprite pixels
 w862     Set when X is right to Store pixel #2 when rotating sprite pixels
@@ -622,6 +623,14 @@ w882     Set to store pixel #6 when rotating sprite pixels (to l521, on clk1)
 w883     (used to simplify logic with w860..w866)
 w884     Set to store pixel #7 when rotating sprite pixels (to l522, on clk1)
 w885     Set when rotated sprite pixels are ready to be copied into l523..l530
+w902     Determines whether line buffer pixel #0 will be written
+w903     Determines whether line buffer pixel #1 will be written
+w904     Determines whether line buffer pixel #2 will be written
+w905     Determines whether line buffer pixel #3 will be written
+w906     Determines whether line buffer pixel #4 will be written
+w907     Determines whether line buffer pixel #5 will be written
+w908     Determines whether line buffer pixel #6 will be written
+w909     Determines whether line buffer pixel #7 will be written
 w910     Line buffer write enable pixel #0
 w911     Line buffer write enable pixel #1
 w912     Line buffer write enable pixel #2
@@ -1083,12 +1092,13 @@ l446     (from w800) Initial(?) X column for a sprite in the linebuffer (in 8px 
 l447     (from w802) Next linebuffer address to write to? (derived from w800 and regularly incremented or decremented by 1)
 l448     (latches w795 to pass to l449)
 l449     Working sprite hflip (from w795->l448, used to determine drawing direction)
-l454     Same as l498 (from l499), on next DCLK negedge (i.e. 1 cycle later)
+l454     Same as l498 (from l499), on next DCLK posedge (i.e. 1 cycle later)
 l456     Set when l457 should be incremented
 l457     Counter for sprite 8x1 silvers left to draw, NOT'd (note: 11 for the last one to draw)
 l458     Set if w802 is within viewport range (from w810, 1 DCLK cycle later)
 l459     Same as ~l498 (note the ~), 2 DCLK cycles later (goes to l460)
 l460     Same as ~l498 (note the ~), 3 DCLK cycles later
+l461     Selects whether we're drawing to the left or right of a 8px line buffer boundary (align to clk1)
 l463     (used to stretch w814 for +1 DCLK)
 l464     (used to stretch w951 for +1 DCLK)
 l470     Set while in viewport area and active scan (from w388->l471, 2 dots (4 DCLK) later)
@@ -1110,7 +1120,7 @@ l495     Set=0 to pick pixels #0 and #1 for w843_2 (for mode 4, without hflip su
 l496     Set=0 to pick pixels #2 and #3 for w843_2 (for mode 4, without hflip support) (also used by w838)
 l497     Set=0 to pick pixels #4 and #5 for w843_2 (for mode 4, without hflip support) (also used by w839)
 l498     Set=0 to pick pixels #6 and #7 for w843_2 (for mode 4, without hflip support) (also used by w840)
-l499     Same as l498, negated, on next DCLK posedge (0.5 cycles later)
+l499     Same as l498, negated, on next DCLK negedge (0.5 cycles later)
 l501     (used for w843_1 and w847) m5 sprite hflip (from w795)
 l502     Latches pair of sprite pixels (from w844) on DCLK negedge (goes to w845)
 l503     X coordinate bits 2:1 from w799 (loaded on w846, incremented if not, +1 DCLK delay), used for l504

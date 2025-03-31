@@ -81,6 +81,17 @@ Writing to `$C0001C` changes the H counter's value to bits 8:0 from the data bus
 
 Reading from `$C0001C` returns a bunch of flags in bits 13:0 of the data bus (to be documented).
 
+## Test register $8
+
+Not sure what it does but there's some logic to write to the linebuffer (possibly related to test register 0 bit 13?). Bits 7:6 of `$C00018` select a pair of pixels within the current 8px boundary:
+
+- `$C00018[7:6] == 00`: pixels #0 and #1
+- `$C00018[7:6] == 01`: pixels #2 and #3
+- `$C00018[7:6] == 10`: pixels #4 and #5
+- `$C00018[7:6] == 11`: pixels #6 and #7
+
+In the description for test register $0 bit 13 we mention that `$C00018[5:0]` is used to select the line buffer address, but I wonder if it's supposed to be used *here* instead.
+
 ## Test register $F
 
 Writing to `$C0001C` will reset the VDP (as if its /RESET pin had been asserted), regardless of what you write. This register is write-only.
