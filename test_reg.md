@@ -36,7 +36,7 @@ Writing to `$C0001C`:
     - Note: must be `00` for background plane to display.
 * Bits 11:9 override PSG output. When bit 9 is set, bits 11:10 select a PSG channel to output and the rest are muted.
 * Bit 12 is not fully understood, but it seems to let you write sprite properties to one of the internal lists?
-* Bit 13 is not fully understood, but it seems to allow direct access to the sprite linebuffer. The linebuffer address is selected with bits 5:0 of `$C00018`.
+* Bit 13 seems to give direct access to the sprite linebuffer when set (sprite rendering is disabled). Meant to be used in conjunction with test register $8.
 * Bit 15 seems to be unused.
 
 The way VDP implements multiplexers is that each input is gated and then merged. The layer mux select is a _huge_ string of this, and when bits 8:7 are used to forcefully enable a plane that shouldn't be displayed, it'll interfere with the plane that's supposed to show up (this seems to be a bus fight, in many later VDPs it tends to look like an AND but it may also show up as noise instead).
@@ -81,16 +81,56 @@ Writing to `$C0001C` changes the H counter's value to bits 8:0 from the data bus
 
 Reading from `$C0001C` returns a bunch of flags in bits 13:0 of the data bus (to be documented).
 
+## Test register $4
+
+Reading from `$C0001C` gives the current color output (note that for whatever reason all the bits are inverted, i.e. apply a NOT to it):
+
+- Bits 10:8 = blue component
+- Bits 7:5 = green component
+- Bits 4:2 = red component
+- Bit 1 = shadow
+- Bit 0 = highlight
+
+## Test register $7
+
+Reading from `$C0001C` seems to return information about the current sprite being rendered. The returned information depends on bits 6:5 of `$C00018`.
+
+- When `$C00018[6:5] == 0`:
+	+ `$C0001C[10:0]` = tile number
+- When `$C00018[6:5] == 1`:
+	+ `$C0001C[10:9]` = always 0?
+	+ `$C0001C[8:0]` = X coordinate
+- When `$C00018[6:5] == 2`:
+	+ `$C0001C[13:8]` = Y offset within sprite
+	+ `$C0001C[7:6]` = sprite height
+	+ `$C0001C[5:4]` = sprite width
+	+ `$C0001C[3]` = priority flag
+	+ `$C0001C[2:1]` = palette
+	+ `$C0001C[0]` = horizontal flip  
+
+(strictly speaking bits 13:11 always return the upper bits of the Y offset, but I get the impression that you weren't supposed to rely on that :P)
+
 ## Test register $8
 
-Not sure what it does but there's some logic to write to the linebuffer (possibly related to test register 0 bit 13?). Bits 7:6 of `$C00018` select a pair of pixels within the current 8px boundary:
+Seems to give direct access to the sprite linebuffer when test register $0 bit 13 = 1.
 
-- `$C00018[7:6] == 00`: pixels #0 and #1
-- `$C00018[7:6] == 01`: pixels #2 and #3
-- `$C00018[7:6] == 10`: pixels #4 and #5
-- `$C00018[7:6] == 11`: pixels #6 and #7
+Bits 5:0 of `$C00018` select a 8px boundary within the linebuffer. Bits 7:6 of `$C00018` select a pair of pixels within the current 8px boundary. In other words:
 
-In the description for test register $0 bit 13 we mention that `$C00018[5:0]` is used to select the line buffer address, but I wonder if it's supposed to be used *here* instead.
+- `$C00018[5:0]` → X coordinate bits 8:3
+- `$C00018[7:6]` → X coordinate bits 2:1  
+
+(in other words: drop the bottom bit of the X coordinate, then rotate it right by two places and put it in the low byte of `$C00018`)
+
+Reading from `$C0001C` will return the pixel data from the linebuffer, on bits 6:0 for the even pixel and bits 14:8 for the odd pixel:
+
+- `$C0001C[1:0]` = palette of even pixel
+- `$C0001C[2]` = priority of even pixel
+- `$C0001C[6:3]` = color of even pixel
+- `$C0001C[9:8]` = palette of odd pixel
+- `$C0001C[10]` = priority of odd pxel
+- `$C0001C[14:11]` = color of odd pixel  
+
+Writing to `$C0001C` seems to write the pair of pixels into the linebuffer instead (needs tests to confirm, the mechanism is spread all over so it's harder to verify just by reading the Verilog code).
 
 ## Test register $F
 
