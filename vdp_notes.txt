@@ -279,7 +279,7 @@ w353     When outputting to VRAM data bus, selects byte for FIFO entry #2 data (
 w354     When outputting to VRAM data bus, selects byte for FIFO entry #3 data (lower byte)
 w355     Logical Y coordinate
 w356     reg_test1[6:4] == 3'h1 OR 3'h0 and time for plane A tilemap fetch
-w357     reg_test1[6:4] == 3'h1
+w357     reg_test1[6:4] == 3'h1 (used by w356)
 w358     (part of the expression in w359)
 w359     Free VRAM slot (CPU access allowed) (latched in l109)
 w360     Set if hpos = 258+1 (H32) or 322+1 (H40), 1 dot later than when F flag is cleared (from l117)
@@ -293,7 +293,7 @@ w367     (used to compute w364, see above)
 w368     (used to compute w364, see above)
 w369     (used to compute w364, see above)
 w370     From external sync: H counter wraparound
-w371     reg_test1[6:4] == 3'h2
+w371     reg_test1[6:4] == 3'h2 (used by w372)
 w372     reg_test1[6:4] == 3'h2 OR 3'h0 and time for plane B tilemap fetch
 w373     actual vsync to output (selects between mode 4 or mode 5 vsyncs)
 w374     selects between vsync or hclk2 for the /VSYNC pin
@@ -400,9 +400,10 @@ w509     H Timing signal: ??? (same as w510 but for mode 4?) (to l146)
 w510     H Timing signal: 3px after sprite X & tile ID fetch in mode 5 (to l145)
 w511     H Timing signal: H counter = 507 (-5)
 w512     H Timing signal: something to do with hscroll (H counter multiple of 16px +3)
-w515     VScroll value to work with (VSRAM output in mode 5, register $09 in mode 4)
-w516     Set to latch a VSRAM read into l180
-w519     Clear when vscroll inhibit should kick in, set otherwise
+w513     Set when latching a value from VSRAM into l185
+w515     VScroll value to work with (VSRAM output in mode 5, register $09 in mode 4) (plane A?)
+w516     Set when latching a value from VSRAM into l180
+w519     Clear when vscroll inhibit should kick in, set otherwise (stored in l186)
 w522     Y coordinate to access in the tilemap (before interlaced mode adjustment)
 w523     Set if plane A/B size is 32 tiles (reg_hsz == 2'h0)
 w524     Set if plane A/B size is 64 tiles (reg_hsz == 2'h1)
@@ -415,10 +416,14 @@ w530     Do Y scroll wraparound? (for mode 4, goes to w529)
 w531     Set to output tilemap fetch address bits 16:14 on VRAM address bus
 w532     Plane address bits 16:13 (put on VRAM bus) / Either m5 plane A or B address bits 16:13 (depending on l200)
 w533     Plane address bits 12:11 (put on VRAM bus) / Either (m4) plane A or (m5) address bits 12:11
-w534     Set when H counter is not within 384..511
+w534     Set when H counter is not within 384..511 (used for w539)
 w535     Hscroll line to read (after applying hscroll mode bits)
 w536     X offset within window tilemap (accounts for H32 or H40)
 w537     Which hscroll line to fetch? (drops LSB of logical Y coordinate, should match l105[7:0])
+w538     Set when within the window X region
+w539     Set when within the window X region and X < 384
+w540     Set when within the window Y region
+w541     Selects plane A (0) or window (1) for output (goes to l217)
 w542     Latch window X register (into l187 and l188)
 w543     Latch window Y register (w/o test register, into w544)
 w544     Latch window Y register (into l189 and l190)
@@ -429,7 +434,11 @@ w552     Set if hscroll inhibit should kick in (in mode 4)
 w553     Clear to latch hscroll for plane A in mode 4
 w554     Hscroll value to use when fetching, INVERTED (i.e. NOT'd)
 w555     Actual X coordinate to access in the tilemap (upper bits used in w527, lower bits in VRAM address bus)
+w556     Set when we want to set the address for a plane B tile name fetch (goes to l200)
+w557     Set when we want to set the address for a plane A tile name fetch (goes to l201)
 w558     Set to output tilemap fetch address bits 13:0 on VRAM address bus
+w559     VRAM address output enable: window plane tile name fetch (to l202)
+w560     Set if time to fetch plane A or B tilemap, or HL pulse when reg_test1[8]
 w561     Set if in left/right border (H32: H counter >= 256; H40: >= 320)
 w562     Set if in viewport horizontally and in mode 4
 w563     Set if w562 and odd tile (H counter = multiple of 16px + 8px)
@@ -448,13 +457,18 @@ w577     Bits 4:2 of plane A/B tile address to fetch
 w578     Bits 13:5 of plane A/B 1st tile address to fetch
 w579     Bits 16:14 of plane A/B 1st tile address to fetch
 w580     Bits 16:5 of plane A/B 2nd tile address to fetch
-w581     Mux: plane A or B tile bank (address MSB)
+w581     Mux: plane A or B tile bank (address MSB, selected by l197)
+w582     Rendering plane A or B? (goes to l218)
 w583     *Actual* plane A/B vflip flag in effect (I think it throws in test register?)
-w584     Plane A/B hflip flag (read from VRAM), adjusted for mode 4/5
-w585     Plane A/B vflip flag (read from VRAM), adjusted for mode 4/5
-w586     Plane A/B palette flags (read from VRAM), adjusted for mode 4/5
-w587     Plane A/B priority flag (read from VRAM), adjusted for mode 4/5
+w584     Plane A hflip flag (read from VRAM), adjusted for mode 4/5
+w585     Plane A vflip flag (read from VRAM), adjusted for mode 4/5
+w586     Plane A palette flags (read from VRAM), adjusted for mode 4/5
+w587     Plane A priority flag (read from VRAM), adjusted for mode 4/5
 w592     ??? (copies l223..l226 to l232..l235, l243..l246 to l255..l258, l259 to l260 when set)
+w602     Plane A or B hflip flag (w599 = 0: plane A, 1: plane B)
+w603     Plane A or B palette bit 0 (w599 = 0: plane A, 1: plane B)
+w604     Plane A or B palette bit 1 (w599 = 0: plane A, 1: plane B)
+w605     Plane A or B priority (w599 = 0: plane A, 1: plane B)
 w606     Which pixel within a tile to show for plane A
 w607     Plane A color index to show (to l269)
 w608     (part of the expression for w609 to account for mode 4 and 5 differences)
@@ -473,6 +487,10 @@ w623     NOT column vscroll (i.e. mode 5 full vscroll or mode 4)
 w624     Set if H counter is multiple of 16px if full vscroll, or if offset +8 if column vscroll
 w625     Vscroll column to read from VSRAM
 w626     VSRAM addres to access (goes to l212)
+w634     Plane A or B hflip flag (l311[3] = 0: plane A, 1: plane B)
+w635     Plane A or B palette bit 0 (l311[3] = 0: plane A, 1: plane B)
+w636     Plane A or B palette bit 1 (l311[3] = 0: plane A, 1: plane B)
+w637     Plane A or B priority (l311[3] = 0: plane A, 1: plane B)
 w640     [???] (set to start the sequence for w619..w622)
 w641     Which pixel of plane B tile to show? (0 to 7)
 w642     Lets you force a hscroll table fetch when reg_test1[7] == 1 and HL
@@ -960,13 +978,13 @@ l112     H Timing signal: H counter wraparound (from w490, introduces 1 cycle of
 l113     Used to do edge detection of l121
 l115     H Timing signal: increment V counter (from w502, turned high logic), latch window settings
 l117     H Timing signal: VSRAM read in full vscroll, when F flag is cleared (from w505), 1 dot later
-l118     H Timing signal: fetch plane A tilemap data (from w477)
-l119     H Timing signal: fetch plane B tilemap data (from w478)
+l118     H Timing signal: fetch plane A tilemap data (from w477), 1 dot later
+l119     H Timing signal: fetch plane B tilemap data (from w478), 1 dot later
 l120     CSYNC pin input
 l121     ??? (whatever w376 is)
 l122     H Timing signal: (whatever w492 is, goes to l173)
 l123     H Timing signal: end of hsync
-l124     H Timing signal: VSRAM read in column vscroll (from w506)
+l124     H Timing signal: VSRAM read in column vscroll (from w506), 1 dot later
 l125     H Timing signal: fetch plane A or B tile data (1st half) (from w479)
 l126     H Timing signal: fetch plane A or B tile data (2nd half) (from w480)
 l129     HBLANK flag in mode 4
@@ -1005,6 +1023,7 @@ l181     Data to write to VSRAM
 l182     Data to write to VSRAM (bits 10:8, goes to l181)
 l183     Enables VSRAM output to the VRAM bus
 l184     VScroll value to work with (VSRAM output in mode 5, register $09 in mode 4) (from w515, latched when w517)
+l186     Clear when vscroll inhibit should kick in, set otherwise (from w519)
 l187     Latches window left/right split select (copied from reg $11 on w542)
 l188     Latches window X split position (copied from reg $11 on w542)
 l189     Latches window up/down split select (copied from reg $12 on w544)
@@ -1017,8 +1036,10 @@ l195     Bits 9:8 of horizontal scroll in mode 5 for plane B
 l196     VRAM address output enable: bits 4:0 of plane A/B tile fetch
 l197     Fetching plane A (0) or plane B (1)?
 l198     Bit 1 of plane A/B tile address to fetch (inverted)
-l199     VRAM address output enable: bits 13:5 of plane A/B tile fetch
-l202     [???] (there's window tilemap fetch on VRAM bus)
+l199     VRAM address output enable: bits 13:5 of 1st plane A/B tile fetch (from w551)
+l200     Set when we want to set the address for a plane B tile name fetch (from w556, goes to w558)
+l201     Set when we want to set the address for a plane A tile name fetch (from w557, goes to w558)
+l202     VRAM address output enable: window plane tile name fetch (from w559)
 l203     (pipeline, goes to l204)
 l204     (pipeline, goes to l205)
 l205     Set to start fetching of tilemap table data (see l251)
@@ -1033,6 +1054,8 @@ l213     Set while fetching hscroll plane A bits 7:0 (see w570)
 l214     Set while fetching hscroll plane A bits 9:8 (see w571)
 l215     Set while fetching hscroll plane B bits 7:0 (see w572)
 l216     Set while fetching hscroll plane B bits 9:8 (see w573)
+l217     Selects plane A (0) or window (1) for output (from w541, used by w576)
+l218     VRAM address output enable: bits 16:5 of 2nd plane A/B tile fetch (from w582)
 l219     Plane A/B 1st tilemap fetch lower byte
 l220     Plane A/B 1st tilemap fetch upper byte
 l221     Plane A/B 2nd tilemap fetch lower byte
@@ -1047,6 +1070,7 @@ l251     Set while fetching tilemap data (1st tile) bits 7:0 (see w615)
 l252     Set while fetching tilemap data (1st tile) bits 15:8 (see w616)
 l253     Set while fetching tilemap data (2nd tile) bits 7:0 (see w617)
 l254     Set while fetching tilemap data (2nd tile) bits 15:8 (see w618)
+l259     [???] On w591, taken from fetching tilemap name: {pri:a,pri:b, pal:a[1],pal:b[1], pal:a[0],pal:b[0], hf:a,hf:b}
 l261     Plane A tile pixels 7:6
 l262     Plane A tile pixels 5:4
 l263     Plane A tile pixels 3:2 (m5), plane A bitplane 1 (m4)
@@ -1061,6 +1085,7 @@ l275     Plane B 1st tile 4th byte latch (from VRAM, may be byteswapped?)
 l276     Plane B 1st tile 3rd byte latch (from VRAM, may be byteswapped?)
 l277     Plane B 1st tile 2nd byte latch (from VRAM, may be byteswapped?)
 l278     Plane B 1st tile 1st byte latch (from VRAM, may be byteswapped?)
+l291     [???] On w631, taken from fetching tilemap name: {pri:a,pri:b, pal:a[1],pal:b[1], pal:a[0],pal:b[0], hf:a,hf:b}
 l293     VRAM address bits 6:1 (used in VSRAM block)
 l294     Plane B 2nd tile 4th byte latch (from VRAM, may be byteswapped?)
 l295     Plane B 2nd tile 3rd byte latch (from VRAM, may be byteswapped?)
@@ -1076,9 +1101,10 @@ l320     Plane B priority to show (from w637, to l321 and mux block)
 l321     Plane B priority to show (from l320, to color bus)
 l322     Plane B color palette to show (from w636;w635, to l323)
 l323     Plane B color palette to show (from l322, to color bus)
-l327     (see l328 -> l332)
-l328     (see l332)
-l332     { sat_size, sat_link }
+l325     Latch VRAM address bit 1, used by w650 to tell which word of a sprite entry is cached (Y or size/link)
+l327     Sprite size and link (latched from cache, goes to l328)
+l328     Sprite size and link, inverted (from l327, goes to l332)
+l332     Sprite size and link, inverted (from l328, latched on w652)
 l343     Sprite Y position, inverted (from w680) (latched when w660 set)
 l344     Sprite Y position, NOT inverted (from l343, 0.5 dots later)
 l345     Mode 5 sprite Y position (latched from the cache, 1 dot later)
