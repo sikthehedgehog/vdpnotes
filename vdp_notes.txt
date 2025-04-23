@@ -405,6 +405,7 @@ w515     VScroll value to work with (VSRAM output in m5, reg $09 in m4) (plane A
 w516     Set when latching a value from VSRAM into l180
 w518     VScroll value to work with (from l184), with vscroll inhibit applied if needed (from l186)
 w519     Clear when vscroll inhibit should kick in, set otherwise (stored in l186)
+w520     Selects plane A (0) or B (1) for vscroll source
 w521     Y scroll offset (to add to screen Y coordinate, see w355 and w522)
 w522     Y coordinate to access in the tilemap (before interlaced mode adjustment)
 w523     Set if plane A/B size is 32 tiles (reg_hsz == 2'h0)
@@ -1060,7 +1061,7 @@ l213     Set while fetching hscroll plane A bits 7:0 (see w570)
 l214     Set while fetching hscroll plane A bits 9:8 (see w571)
 l215     Set while fetching hscroll plane B bits 7:0 (see w572)
 l216     Set while fetching hscroll plane B bits 9:8 (see w573)
-l217     Selects plane A (0) or window (1) for output (from w541, used by w576)
+l217     Selects plane A (0) or window (1) for output (from w541, used by vscroll logic in w576)
 l218     VRAM address output enable: bits 16:5 of 2nd plane A/B tile fetch (from w582)
 l219     Plane A/B 1st tilemap fetch lower byte
 l220     Plane A/B 1st tilemap fetch upper byte
