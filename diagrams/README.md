@@ -15,4 +15,4 @@ accidentally forget to update something on a commit.
 
 By general rule, boxes with solid borders introduce an intentional delay (i.e. waiting for a certain clock cycle), while boxes with dotted borders don't (i.e. only propagation delay). Rounded boxes refer to signals from other parts of the VDP circuit.
 
-The boxes only include a loose description while the original wire names are still included in them. Refer to the Verilog file for exact details.
+The boxes only include a loose description while the original wire names are still included in them. Refer to the Verilog file for exact details. Sometimes two boxes will refer to the same wire, this usually happens if there's a lot going on in a single expression (conversely, sometimes multiple wires may be merged into a single box if they make a single computation).
