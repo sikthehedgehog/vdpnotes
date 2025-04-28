@@ -308,14 +308,19 @@ w385     Timing signal: fetch plane A or B tile data (1st half) (from l125)
 w386     (part of the expression in w359)
 w388     Set while in viewport area and active scan (also in l470 two dots later)
 w389     Set while in viewport area (in H and V range and display enabled)
+w390     Pre-vsync or post-vsync in mode 5 (NOT during vsync itself!)
 w392     Combines l137 (start of right border) with reset to force border on VDP reset, goes to t29
 w394     Timing signal: fetch plane A or B tile data (2nd half) (from l126)
 w395     (part of the expression in w359)
 w396     Hsync (for current mode)
 w398     Select between full hsync pulses and half hsync pulses
+w399     Timing for half hsync pulses? (~w398 AND mid-line hsync pulses)
+w400     Pre-vsync or post-vsync in mode 5 and equalization hsync pulses?
 w401     Start of hblank OR reset
 w403     ??? (just merges w410 with its delayed signal)
 w404     Hsync output gated by hsync dir bit (comes from w396, goes to l136)
+w405     Timing for full hsync pulses? (w398 AND normal hsync pulses)
+w406     (same as w405)
 w410     w361 (H counter wraparound) & w416 (???)
 w411     External hsync, when enabled by reg $0C (gated from l149)
 w414     H Timing signal: start of equalization pulse
@@ -350,6 +355,8 @@ w448     (duplicated circuit, same as w445)
 w449     Related to hsync, set one dot after w503 (middle of scanline) and/or if field is EVEN
 w450     t36 (the 3 lines pre-vsync) but only in mode 5
 w451     Clear even/odd flag (force even flag)
+w452     Set to start the pre-vsync period (sets t36)
+w453     Set to disable color output (sets t37)
 w454     Used by w451 and w456, external sync enabled and H counter = 0 on the line vblank begins
 w455     Toggle even/odd flag (external sync disabled and H counter = 0 on the line vblank begins)
 w456     Set even/odd flag (force odd flag, goes to l168 instead of directly to w446)
@@ -359,7 +366,7 @@ w459     Used by w454 and w455, H counter = 0 on the line vblank begins (delayed
 w460     External sync and pulse from w464 (1 cycle later)
 w462     Combines reset and l167 (start of top border / end of vblank)
 w466     Opposite of w439 (1 = active scan, 0 = passive scan)
-w467     V Timing signal: V counter wraparound point
+w467     V Timing signal: V counter wraparound point (goes to l174)
 w468     V Timing signal: (low logic) end of vblank / start of vertical visible area
 w469     V Timing signal: (low logic) start of vblank / end of vertical visible area
 w470     V Timing signal: end of bottom border / start of bottom TV blank (always 3 lines before w472)
@@ -381,6 +388,9 @@ w485     H Timing signal: m4 sprite X / tile ID fetches? (active scan only, pass
 w486     H Timing signal: m4 sprite Y fetches?
 w487     H Timing signal: m4 fetch sprite Y data???, m5 scan sprite Y data? (fed into l147)
 w488     H Timing signal: fetch hscroll table (fed into l148)
+w490     H Timing signal: H counter wraparound point
+w491     H Timing signal: ??? (used by H counter external sync logic)
+w492     H Timing signal: ??? (used by V counter external sync logic)
 w493     H Timing signal: start of horizontal display (end of left border)
 w494     H Timing signal: end of horizontal display (start of right border)
 w495     H Timing signal: start of hblank (hblank flag set)
@@ -976,7 +986,7 @@ l103     FIFO entry #3 data (lower byte)
 l104     ??? (latch for data to write? used in a lot of places)
 l105     V counter
 l106     H counter
-l107     Vsync (for mode 5, delayed from l663)
+l107     Vsync (for mode 5, delayed from l663 by 8 dots)
 l108     H Timing signal: refresh slot (from w476, introduces 1 cycle of latency)
 l109     Free VRAM slot (CPU access allowed) (latched from w359)
 l110     H Timing signal: H counter = 0 (latched from w504, introduces 1 cycle of latency)
@@ -988,7 +998,7 @@ l117     H Timing signal: VSRAM read in full vscroll, when F flag is cleared (fr
 l118     H Timing signal: fetch plane A tilemap data (from w477), 1 dot later
 l119     H Timing signal: fetch plane B tilemap data (from w478), 1 dot later
 l120     CSYNC pin input
-l121     ??? (whatever w376 is)
+l121     External pulse for H counter wraparound? (whatever w376 is)
 l122     H Timing signal: (whatever w492 is, goes to l173)
 l123     H Timing signal: end of hsync
 l124     H Timing signal: VSRAM read in column vscroll (from w506), 1 dot later
@@ -1022,7 +1032,8 @@ l168     Set even/odd flag (force odd flag)
 l169     V Timing signal: end of bottom border / start of bottom TV blank (from w470)
 l170     (low logic) Start of vblank (from w469)
 l173     H Timing signal: (whatever w492 is, from l122)
-l174     V Timing signal: V counter wraparound point (from w467)
+l174     V Timing signal: V counter wraparound point (from w467), 1 dot later
+l176     (used for edge detection of l175)
 l178     Bit 3 of H counter (related to tilemap fetches?)
 l179     Register $09 (mode 4 vscroll)
 l180     Holds data read from VSRAM bus (updated when w516 goes high)
@@ -1254,7 +1265,7 @@ l558     (latches w972's value and delays it by 1 more dot)
 l571     VRAM write to upper byte (latched from w286, goes to w991)
 l574     (use unknown?) Free VRAM slot (CPU access allowed) (latched from l109)
 l585     VRAM write to lower byte (latched from w288, goes to w999)
-l586     0: enable 1st VRAM (/SE0), 1: enable 2nd VRAM (/SE1)
+l586     0: enable 1st VRAM serial bus (/SE0), 1: enable 2nd VRAM serial bus (/SE1)
 l592     Physical VRAM address (upper half, latched from w1012)
 l593     Physical VRAM address (lower half, latched from w1014)
 l600     Set sprite collision flag
