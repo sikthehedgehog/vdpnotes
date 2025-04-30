@@ -1,4 +1,4 @@
-// ???
+// Start of mid-scanline hsync pulse
 
 	assign w498 = pla_hcnt2[28] | pla_hcnt2[29];
 

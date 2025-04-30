@@ -306,6 +306,7 @@ w382     reg_test1[6:4] == 3'h3 (forces w385 high)
 w383     reg_test1[6:4] == 3'h4 (forces w394 high)
 w385     Timing signal: fetch plane A or B tile data (1st half) (from l125)
 w386     (part of the expression in w359)
+w387     Intended /CSYNC output for the current mode, before it's filtered by external sync (goes to w397)
 w388     Set while in viewport area and active scan (also in l470 two dots later)
 w389     Set while in viewport area (in H and V range and display enabled)
 w390     Pre-vsync or post-vsync in mode 5 (NOT during vsync itself!)
@@ -313,19 +314,26 @@ w392     Combines l137 (start of right border) with reset to force border on VDP
 w394     Timing signal: fetch plane A or B tile data (2nd half) (from l126)
 w395     (part of the expression in w359)
 w396     Hsync (for current mode)
+w397     Disables /CSYNC output if external sync is on (goes to l128, the /CSYNC latch)
 w398     Select between full hsync pulses and half hsync pulses
 w399     Timing for half hsync pulses? (~w398 AND mid-line hsync pulses)
-w400     Pre-vsync or post-vsync in mode 5 and equalization hsync pulses?
+w400     Pre-vsync or post-vsync in mode 5 and mid-line hsync pulses?
 w401     Start of hblank OR reset
 w403     ??? (just merges w410 with its delayed signal)
 w404     Hsync output gated by hsync dir bit (comes from w396, goes to l136)
 w405     Timing for full hsync pulses? (w398 AND normal hsync pulses)
 w406     (same as w405)
+w407     (sets t31, hsync?)
+w408     (resets t31, hsync?) (w409 OR reset, same logic as w414)
+w409     Start of hsync (standard or mid-line)
 w410     w361 (H counter wraparound) & w416 (???)
 w411     External hsync, when enabled by reg $0C (gated from l149)
-w414     H Timing signal: start of equalization pulse
+w412     (something hsync? w405 OR w399)
+w413     (something hsync? w406 OR w400 OR w391)
+w414     H Timing signal: start of short hsync pulse (same logic as w408)
 w416     ~reg_8c_b4 & reg_80_b0 (related to sprites?)
 w419     Lets you force hscroll table fetch when reg_test1[6:4] == 3'h5
+w420     Intended /CSYNC output, for use in mode 4
 w421     w427=0 pulse every hsync, w427=1 toggle every hsync?
 w422     Status port HB bit (0 = not in hblank, 1 = in hblank)
 w423     H Timing signal: start of hsync
@@ -395,10 +403,10 @@ w493     H Timing signal: start of horizontal display (end of left border)
 w494     H Timing signal: end of horizontal display (start of right border)
 w495     H Timing signal: start of hblank (hblank flag set)
 w496     H Timing signal: end of hblank (hblank flag clear)
-w498     H Timing signal: start of middle equalization pulse? (4px/11px early?)
-w499     H Timing signal: end of equalization pulse (4px/11px early?)
-w500     H Timing signal: start of hsync (early 4px in m4, 11px in m5), start of back porch (2px early)
-w501     H Timing signal: end of hsync (early 4px in m4, 11px in m5)
+w498     H Timing signal: start of mid-line hsync pulse (4px/11px early?)
+w499     H Timing signal: end of short hsync pulse (4px/11px early?)
+w500     H Timing signal: start of standard hsync (early 4px in m4, 11px in m5), start of back porch (2px early)
+w501     H Timing signal: end of long hsync (early 4px in m4, 11px in m5)
 w502     H Timing signal: increment or warparound V counter (low logic)
 w503     H Timing signal: H position of middle of the scanline (1 dot wide, used for interlaced mode, goes to l111)
 w504     H Timing signal: H counter = 0
@@ -821,26 +829,26 @@ w1073    CRAM CPU access in mode 4?
 w1074    ??? (involves SPA/B)
 w1075    CRAM data bus? (delay line?)
 w1076    CRAM address to access (goes to l617)
-w1077    Set if output color is transparent (latched in l619)
+w1077    Set if output color is transparent, used for computing /YS (latched in l619)
 w1078    CRAM write: data for "red" bits (internal bits 2:0)
 w1079    CRAM write: data for "green" bits (internal bits 5:3)
 w1081    Enable color output on RGB pins (goes to l624)
-w1082    Set when displaying background color (ignoring SPA/B)
+w1082    Set when displaying transparent color (ignoring SPA/B)
 w1083    Red color bit 1 (mux for m4/m5)
 w1084    Red color bit 2 (mux for m4/m5)
 w1085    Green color bit 1 (mux for m4/m5)
 w1086    Green color bit 2 (mux for m4/m5)
 w1087    Blue color bit 1 (mux for m4/m5)
 w1088    Blue color bit 2 (mux for m4/m5)
-w1089    Red color bit 1 masked by M4
-w1090    Red color bit 2 masked by M4
-w1091    Green color bit 1 masked by M4
-w1092    Green color bit 2 masked by M4
-w1093    Blue color bit 1 masked by M4
-w1094    Blue color bit 2 masked by M4
-w1098    Blue color bit 0 masked by M5
-w1099    Green color bit 0 masked by M5
-w1100    Red color bit 0 masked by M5
+w1089    Red color bit 1 masked by M4 and blanking
+w1090    Red color bit 2 masked by M4 and blanking
+w1091    Green color bit 1 masked by M4 and blanking
+w1092    Green color bit 2 masked by M4 and blanking
+w1093    Blue color bit 1 masked by M4 and blanking
+w1094    Blue color bit 2 masked by M4 and blanking
+w1098    Blue color bit 0 masked by M5 and blanking
+w1099    Green color bit 0 masked by M5 and blanking
+w1100    Red color bit 0 masked by M5 and blanking
 w1101    Normal color flag (see l630 for highlight)
 w1102    Shadow color flag (see l630 for highlight)
 w1103    Goes to the RGB DAC taps ([0] = red, [1] = green, [2] = blue)
@@ -1000,20 +1008,23 @@ l119     H Timing signal: fetch plane B tilemap data (from w478), 1 dot later
 l120     CSYNC pin input
 l121     External pulse for H counter wraparound? (whatever w376 is)
 l122     H Timing signal: (whatever w492 is, goes to l173)
-l123     H Timing signal: end of hsync
+l123     H Timing signal: end of long hsync pulse (see w501)
 l124     H Timing signal: VSRAM read in column vscroll (from w506), 1 dot later
 l125     H Timing signal: fetch plane A or B tile data (1st half) (from w479)
 l126     H Timing signal: fetch plane A or B tile data (2nd half) (from w480)
+l127     Intended /CSYNC output delayed by 8 dots, for use in mode 5
+l128     /CSYNC output (inverted)
 l129     HBLANK flag in mode 4
+l131     H Timing signal: start of hsync (see w500)
 l134     H Timing signal: fetch sprite table data (see w481)
 l135     Delays hsync pulse by 7 dots (for mode 5 use, from w421)
 l136     Hsync (high logic)
 l137     H Timing signal: end of horizontal display (start of right border) (see w494)
-l138     H Timing signal: end of equalization pulse (see w499)
+l138     H Timing signal: end of short hsync (see w499)
 l141     H Timing signal: fetch sprite tile (see w482), 1 dot later
 l142     H Timing signal: (see w489), 1 dot later
 l143     H Timing signal: start of hblank (see w495)
-l144     H Timing signal: (whatever w498 is)
+l144     H Timing signal: start of mid-line hsync (see w498)
 l145     H Timing signal: 3px after sprite X & tile ID fetch in mode 5 (from w510)
 l146     H Timing signal: (whatever w509 is, maybe same as w510 but mode 4?)
 l147     H Timing signal: m4 fetch sprite Y data, m5 scan sprite Y data? (see w487)
@@ -1022,7 +1033,10 @@ l149     External HSync pin input
 l152     End of hblank
 l155     H Timing signal: m4 sprite X / tile ID fetches? (active scan only, passive scan is weird) (from w485)
 l156     H Timing signal: m4 sprite tile fetch (1st half), 1 dot later
-l158     HBLANK flag in mode 5 (delayed by one cycle compared to mode 4 l129)
+l157     Hsync pulse (before it's affected by reg $00 bit 3, goes to w421)
+l158     HBLANK flag in mode 5 (delayed by 8 dots compared to mode 4 l129)
+l160     ??? (replaces csync if reg $00 bit 3 == 1, goes to w421)
+l161     (w420 delayed until next dot, used for edge detection)
 l162     V Timing signal: line 511 (from w475, turned high logic)
 l163     V Timing signal: ??? (always 3 lines after w473, end of the extra sync pulses maybe?) (from w474)
 l164     V Timing signal: end of vsync / start of top TV vblank (from w473)
@@ -1329,9 +1343,9 @@ t21      In the middle of a DATA port write
 t25      Writing command bits 15:8 (set by w164, clear by w176)
 t28      Set when a FIFO entry is flushed during DMA, reset when DMA finishes
 t29      Set when in viewport area (horizontally)
-t30      hblank flag? (delayed further down the line)
-t32      hsync (equalization pulses, delayed further down the line)
-t33      hsync (normal hsync, delayed further down the line)
+t30      Internal hblank flag (delayed further down the line)
+t32      hsync (short pulses, delayed further down the line)
+t33      hsync (normal pulses, delayed further down the line)
 t34      2nd equalization pulse range? (set for 3 lines after vsync)
 t35      vsync (w/o including the delay for mode 5)
 t36      1st equalization pulse range? (set 3 for lines before vsync)
@@ -1414,6 +1428,10 @@ reg_test_18    Selected test port
 reg_test0      Test port #0
 
 unk_data       Data to write to VRAM/CRAM/VSRAM (from the FIFO, goes to l104)
+
+r_col          Strobes for each possible red level for the DAC
+g_col          Strobes for each possible green level for the DAC
+b_col          Strobes for each possible blue level for the DAC
 
 
 * Register write enables at w210..w233 (not in order, see below)
