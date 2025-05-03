@@ -1,4 +1,4 @@
-// Start of TV vblanking (above)
+// Start of TV vblanking (above), end of VSync
 
 	assign w473 = pla_vcnt[9] | pla_vcnt[10] | pla_vcnt[11] | pla_vcnt[12]
 		| pla_vcnt[13] | pla_vcnt[14] | pla_vcnt[15] | pla_vcnt[16];

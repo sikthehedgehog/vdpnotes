@@ -1,4 +1,4 @@
-// ??? (possibly related to TV blanking, always 3 lines after w473)
+// End of post-VSync period (always 3 lines after w473)
 
 	assign w474 = pla_vcnt[1] | pla_vcnt[2] | pla_vcnt[3] | pla_vcnt[4]
 		| pla_vcnt[5] | pla_vcnt[6] | pla_vcnt[7] | pla_vcnt[8];
