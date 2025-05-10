@@ -1,5 +1,5 @@
 w1       68000 read (any size)
-w2       Address == ($7xxxxx or $Fxxxxx) and no CPU interrupt acknowledge (w35)?
+w2       Address >= $E00000 and no CPU interrupt acknowledge (w35)?
 w4       Release 68000 bus (used by DMA)
 w5       Request 68000 bus (used by DMA)
 w6       Clear during the 2nd and 4th cycle of a refresh slot
@@ -804,7 +804,7 @@ w1027    [layer mux block] ~a_pri & ~s_pri & ~b_pri & S/H enable
 w1028    [layer mux block] ~a_pri &  s_pri & ~b_pri & S/H enable
 w1029    S/H enable
 w1030    Is it a S/H sprite pixel?
-w1031    Is it a S/H sprite pixel OR no sprite pixel?
+w1031    Is it a S/H sprite pixel OR no sprite pixel? (transparent sprite pixel)
 w1032    Set if plane A layer is transparent in this pixel
 w1033    Set if plane B layer is transparent in this pixel
 w1034    reg_test0[8:7] == 2'h1; (layer override: sprite)
@@ -816,6 +816,10 @@ w1039    Plane B high but not opaque, A and sprite low
 w1040    Plane A and B high but not opaque, sprite low
 w1042    (guess from context) Set to output sprite plane to color bus
 w1044    Set to output sprite plane to color bus (goes to l603)
+w1046    [layer mux block] (a_pri ? s_pri : ~b_pri) AND (transparent sprite pixel)
+w1047    Transparent sprite + transparent plane B + hipri sprite + hipri B
+w1048    Transparent sprite + transparent plane B + lopri sprite + hipri B
+w1049    Set when plane A is highest priority layer? (ignoring its transparent pixels?)
 w1050    Set to output plane A to color bus (goes to w1051)
 w1051    Set to output plane A to color bus (after override is applied, goes to l604)
 w1057    Set to output plane B to color bus (goes to w1058)
@@ -823,10 +827,11 @@ w1058    Set to output plane B to color bus (after override is applied, goes to 
 w1060    (guess from context) Set to output background plane to color bus
 w1061    Set to output background plane to color bus (goes to l606)
 w1062    Plane output enable? ("in visible viewport" AND reg_test0[6] == 0)
-w1064    Normally brightened pixel? (plane A/B high priority and/or S/H disabled)
+w1064    Usually bright pixel? (plane A/B high priority and/or S/H disabled)
 w1065    Shadow or highlight pixel color index (part of w1030's expression)
+w1066    Highlight flag (latched into l607, used 4 dots later in l630)
 w1069    ??? (affected by layer override enable, involves BG color bit 6)
-w1070    ??? (affected by layer override enable, involves BG color bit 7)
+w1070    Allow background color bit 7 to override highlight flag when test reg 0 bit 6 is set
 w1072    CRAM CPU access in mode 5?
 w1073    CRAM CPU access in mode 4?
 w1074    ??? (involves SPA/B)
@@ -1294,6 +1299,9 @@ l603     Show sprite plane (from w1044, goes to color bus)
 l604     Show plane A (from w1051, goes to color bus)
 l605     Show plane B (from w1058, goes to color bus)
 l606     Show background plane (from w1061, goes to color bus)
+l607     Highlight flag (from w1066, used 3 dots later in l630)
+l611     (delays w1070 to line up into l630)
+l612     (delays w1070 to line up into l630)
 l615     SPA/B pin's input (logic reversed from pin!)
 l617     CRAM address to access (from w1076)
 l619     Set if output color is transparent (latched from w1077, goes to l625)
@@ -1349,6 +1357,7 @@ t25      Writing command bits 15:8 (set by w164, clear by w176)
 t28      Set when a FIFO entry is flushed during DMA, reset when DMA finishes
 t29      Set when in viewport area (horizontally)
 t30      Internal hblank flag (delayed further down the line)
+t31      ??? (seems to be used as part of the hsync portion of csync)
 t32      hsync (short pulses, delayed further down the line)
 t33      hsync (normal pulses, delayed further down the line)
 t34      2nd equalization pulse range? (set for 3 lines after vsync)
@@ -1391,7 +1400,7 @@ reg_rs1        Reg 0C:0 = H32/H40 select
 reg_lsm0       Reg 0C:1 = interlaced mode select
 reg_lsm1       Reg 0C:2 = interlaced mode select
 reg_ste        Reg 0C:3 = shadow/highlight enable
-reg_8c_b4      Reg 0C:4
+reg_8c_b4      Reg 0C:4 = SPA/B pin direction (input=0, output=1)
 reg_8c_b5      Reg 0C:5 = /HSYNC pin direction (output=0, input=1)
 reg_8c_b6      Reg 0C:6 = select between vsync(0) or hclk2(1) for /VSYNC
 reg_rs0        Reg 0C:7 = DCLK/EDCLK select

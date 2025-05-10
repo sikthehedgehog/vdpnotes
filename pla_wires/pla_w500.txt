@@ -1,4 +1,4 @@
-// Start of hsync
+// Start of standard hsync
 // Takes 4 pixels to reach the /HSYNC pin in mode 4
 // Takes 11 pixels to reach the /HSYNC pin in mode 5
 

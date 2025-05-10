@@ -1,8 +1,8 @@
-// End of hsync
+// End of long hsync pulse
 // Takes 4 pixels to reach the /HSYNC pin in mode 4
 // Takes 11 pixels to reach the /HSYNC pin in mode 5
 
 	assign w501 = pla_hcnt2[20] | pla_hcnt2[21];
 
-	assign pla_hcnt2[21] = ~reg_rs1 & l106 == 9'd488;
-	assign pla_hcnt2[20] = reg_rs1 & l106 == 9'd482;
+	assign pla_hcnt2[21] = ~reg_rs1 & l106 == 9'd488;  // 26 dots later than hsync
+	assign pla_hcnt2[20] = reg_rs1 & l106 == 9'd482;   // 32 dots later than hsync

@@ -1,9 +1,11 @@
+// End of short hsync pulse
+
 	assign w499 = pla_hcnt2[24] | pla_hcnt2[25] | pla_hcnt2[26] | pla_hcnt2[27];
 
-	// H32
-	assign pla_hcnt2[26] = ~reg_rs1 & l106 == 9'd134;
-	assign pla_hcnt2[27] = ~reg_rs1 & l106 == 9'd475;  // -37
+	// H32 (13 dots later than hsync)
+	assign pla_hcnt2[27] = ~reg_rs1 & l106 == 9'd475;  // Standard hsync
+	assign pla_hcnt2[26] = ~reg_rs1 & l106 == 9'd134;  // Mid-line hsync
 
-	// H40
-	assign pla_hcnt2[24] = reg_rs1 & l106 == 9'd164;
-	assign pla_hcnt2[25] = reg_rs1 & l106 == 9'd466;   // -46
+	// H40 (16 dots later than hsync)
+	assign pla_hcnt2[25] = reg_rs1 & l106 == 9'd466;   // Standard hsync
+	assign pla_hcnt2[24] = reg_rs1 & l106 == 9'd164;   // Mid-line hsync
