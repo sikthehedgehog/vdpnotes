@@ -1,4 +1,4 @@
-// H Enable display
+// Start of viewport horizontally (end of left border)
 
 	assign w493 = pla_hcnt2[38] | pla_hcnt2[39];
 

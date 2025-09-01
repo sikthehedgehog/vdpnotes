@@ -14,6 +14,8 @@ Writing to this port selects what test register to use in port $C0001C.
 
 ## Test register $0
 
+This register is write-only.
+
 Writing to `$C0001C`:
 
 * Bit 0 only is useful when VDP is configured to output the color bus: it replaces color bus bit 6 with the layer priority.
@@ -42,6 +44,8 @@ Writing to `$C0001C`:
 The way VDP implements multiplexers is that each input is gated and then merged. The layer mux select is a _huge_ string of this, and when bits 8:7 are used to forcefully enable a plane that shouldn't be displayed, it'll interfere with the plane that's supposed to show up (this seems to be a bus fight, in many later VDPs it tends to look like an AND but it may also show up as noise instead).
 
 ## Test register $1
+
+This register is write-only.
 
 Writing to `$C0001C`:
 

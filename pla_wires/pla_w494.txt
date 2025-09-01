@@ -1,4 +1,4 @@
-// End of display, start of right border?
+// End of viewport horizontally (start of right border)
 
 	assign w494 = pla_hcnt2[36] | pla_hcnt2[37];
 

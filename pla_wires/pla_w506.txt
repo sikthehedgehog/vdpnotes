@@ -1,4 +1,4 @@
-// Seems to be when VSRAM is read in column vscroll mode?
+// When VSRAM is read in column vscroll mode
 
 	assign w506 = pla_hcnt2[11];
 

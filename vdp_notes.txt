@@ -816,6 +816,7 @@ w1039    Plane B high but not opaque, A and sprite low
 w1040    Plane A and B high but not opaque, sprite low
 w1042    (guess from context) Set to output sprite plane to color bus
 w1044    Set to output sprite plane to color bus (goes to l603)
+w1045    Set if output sprite plane and is a S/H sprite pixel
 w1046    [layer mux block] (a_pri ? s_pri : ~b_pri) AND (transparent sprite pixel)
 w1047    Transparent sprite + transparent plane B + hipri sprite + hipri B
 w1048    Transparent sprite + transparent plane B + lopri sprite + hipri B
@@ -827,10 +828,13 @@ w1058    Set to output plane B to color bus (after override is applied, goes to 
 w1060    (guess from context) Set to output background plane to color bus
 w1061    Set to output background plane to color bus (goes to l606)
 w1062    Plane output enable? ("in visible viewport" AND reg_test0[6] == 0)
+w1063    Set if output sprite plane and sprite color index != 4'hE
 w1064    Usually bright pixel? (plane A/B high priority and/or S/H disabled)
 w1065    Shadow or highlight pixel color index (part of w1030's expression)
 w1066    Highlight flag (latched into l607, used 4 dots later in l630)
-w1069    ??? (affected by layer override enable, involves BG color bit 6)
+w1067    Shadow flag (goes to w1068 to merge with l618)
+w1068    Shadow flag + in viewport (latched into l608, used 4 dots later in l629)
+w1069    Allow background color bit 6 to override shadow flag when test reg 0 bit 6 is set
 w1070    Allow background color bit 7 to override highlight flag when test reg 0 bit 6 is set
 w1072    CRAM CPU access in mode 5?
 w1073    CRAM CPU access in mode 4?
@@ -1037,7 +1041,7 @@ l144     H Timing signal: start of mid-line hsync (see w498)
 l145     H Timing signal: 3px after sprite X & tile ID fetch in mode 5 (from w510)
 l146     H Timing signal: (whatever w509 is, maybe same as w510 but mode 4?)
 l147     H Timing signal: m4 fetch sprite Y data, m5 scan sprite Y data? (see w487)
-l148     H Timing signal: hscroll table fetch (pipeline goes to l316)
+l148     H Timing signal: hscroll table fetch (pipeline goes to w642->l314->l315->l316)
 l149     External HSync pin input
 l152     End of hblank
 l155     H Timing signal: m4 sprite X / tile ID fetches? (active scan only, passive scan is weird) (from w485)
@@ -1085,10 +1089,10 @@ l202     VRAM address output enable: window plane tile name fetch (from w559)
 l203     (pipeline, goes to l204)
 l204     (pipeline, goes to l205)
 l205     Set to start fetching of tilemap table data (see l251)
-l206     VSRAM read enable (from w201, to l209)
-l207     VSRAM write enable, upper byte (from w323, to l210)
-l208     VSRAM write enable, lower byte (from w324, to l211)
-l209     VSRAM read enable (from l206, to w516)
+l206     VSRAM read enable (from w201, to l209 and VSRAM address mux)
+l207     VSRAM write enable, upper byte (from w323, to l210 and VSRAM address mux)
+l208     VSRAM write enable, lower byte (from w324, to l211 and VSRAM address mux)
+l209     VSRAM read latch enable (from l206, to w516)
 l210     VSRAM write enable, upper byte (bits 10:8)
 l211     VSRAM write enable, lower byte (bits 7:0)
 l212     VSRAM address to access (from w626)
@@ -1134,7 +1138,7 @@ l295     Plane B 2nd tile 3rd byte latch (from VRAM, may be byteswapped?)
 l296     Plane B 2nd tile 2nd byte latch (from VRAM, may be byteswapped?)
 l297     Plane B 2nd tile 1st byte latch (from VRAM, may be byteswapped?)
 l311     [???] X offset within plane (B?) output? (loaded with l236, MSB inverted; counts up every dot)
-l314     (pipeline, goes to l315)
+l314     (pipeline, goes to l315) Set to output hscroll address (via w643)
 l315     (pipeline, goes to l316)
 l316     Set to start fetching of hscroll table data (see l213)
 l318     Plane B color index to show (from w647, to l319)
@@ -1300,10 +1304,14 @@ l604     Show plane A (from w1051, goes to color bus)
 l605     Show plane B (from w1058, goes to color bus)
 l606     Show background plane (from w1061, goes to color bus)
 l607     Highlight flag (from w1066, used 3 dots later in l630)
+l608     Shadow flag (from w1068, used 3 dots later in l629)
+l609     (delays w1069 to line up into l629)
+l610     (delays w1069 to line up into l629)
 l611     (delays w1070 to line up into l630)
 l612     (delays w1070 to line up into l630)
 l615     SPA/B pin's input (logic reversed from pin!)
 l617     CRAM address to access (from w1076)
+l618     (from w1075, delayed by 3 dots) Set when going to output viewport pixels?
 l619     Set if output color is transparent (latched from w1077, goes to l625)
 l620     CRAM write: data for "blue" bits (internal bits 8:6)
 l622     Latched RGB color to output (BBBGGGRRR or xxxBBGGRR)
@@ -1440,6 +1448,7 @@ reg_data_mux   Current or incremented address (see w185)
 
 reg_test_18    Selected test port
 reg_test0      Test port #0
+reg_test1      Test port #1
 
 unk_data       Data to write to VRAM/CRAM/VSRAM (from the FIFO, goes to l104)
 

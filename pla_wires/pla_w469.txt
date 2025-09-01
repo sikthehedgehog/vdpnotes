@@ -1,4 +1,4 @@
-// Start of vblank
+// End of viewport vertically (low logic)
 
 	assign w469 = ~(pla_vcnt[37] | pla_vcnt[38] | pla_vcnt[39]);
 

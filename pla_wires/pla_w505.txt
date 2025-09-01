@@ -1,4 +1,4 @@
-// Seems to be when VSRAM is read in full vscroll mode?
+// Plane B VSRAM read in full vscroll mode
 // Also seems to be the point where the F flag becomes 0
 
 	assign w505 = ~(pla_hcnt2[12] | pla_hcnt2[13]);
