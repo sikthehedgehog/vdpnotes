@@ -106,12 +106,14 @@ w143     Read enable for DATA? (used for t14 and t24)
 w144     (clears t18, seems related to CPU writes)
 w145     (sets t18, seems related to CPU writes)
 w146     Part of /DTACK logic (all this goes to w117 via w125)
-w147     CPU strobe (either upper or lower)
+w147     (68000?) CPU strobe (either upper or lower)
+w149     DATA write detect used for FIFO writes (aligned to w154)
+w150     DATA write detect used for FIFO writes (aligned to w153)
 w151     (low logic) VRAM data output strobe
 w152     Any port read (DATA/CTRL, HV, or test register)
-w153     DATA/CTRL access detect, set 3.0 DCLK later, reset 4.0 DCLK later / DATA/CTRL access strobe for w150
-w154     DATA/CTRL access detect, set 3.0 DCLK later, reset 3.5 DCLK later
-w155     DATA/CTRL access detect, set 3.5 DCLK later, reset 4.0 DCLK later / Select high word for next command write?
+w153     DATA/CTRL access detect, set 2.0 DCLK later, reset 3.0 DCLK later / DATA/CTRL access strobe for w150
+w154     DATA/CTRL access detect, set 1.5 DCLK later, reset 2.0 DCLK later / DATA/CTRL access strobe for w149
+w155     DATA/CTRL access detect, set 2.5 DCLK later, reset 3.0 DCLK later / Select high word for next command write?
 w156     FIFO empty or end of DMA
 w158     Set to allow detection of 68000 access
 w159     Used to reset t13 shortly after it started the access sequence (resets t13 when l24 goes high)
