@@ -112,7 +112,7 @@ w150     DATA write detect used for FIFO writes (aligned to w153)
 w151     (low logic) VRAM data output strobe
 w152     Any port read (DATA/CTRL, HV, or test register)
 w153     DATA/CTRL access detect, set 2.0 DCLK later, reset 3.0 DCLK later / DATA/CTRL access strobe for w150
-w154     DATA/CTRL access detect, set 1.5 DCLK later, reset 2.0 DCLK later / DATA/CTRL access strobe for w149
+w154     DATA/CTRL access detect, set 2.0 DCLK later, reset 2.5 DCLK later / DATA/CTRL access strobe for w149
 w155     DATA/CTRL access detect, set 2.5 DCLK later, reset 3.0 DCLK later / Select high word for next command write?
 w156     FIFO empty or end of DMA
 w158     Set to allow detection of 68000 access
