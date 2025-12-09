@@ -124,7 +124,7 @@ w165     Write command bits 7:0
 w166     Write command bits 7:0 (SMS mode), select upper byte next
 w167     Write command bits 15:8? (SMS mode) Write enable for CTRL?
 w168     Write command bits 23:16
-w169     Write enable for DATA?
+w169     Write enable for DATA
 w170     Select low byte for next command write (SMS mode) (same as w174 but before RESET is added)
 w171     Select low word for next command write?
 w174     Select low byte for next command write (SMS mode) (same as w170 but with RESET thrown in)
@@ -133,7 +133,7 @@ w176     Select high word for next command write? (same as w155 but with RESET t
 w177     [w189 is involed somehow] Not CRAM nor VSRAM selected for reading (from w201 and w202)
 w178     CRAM read enable (goes to l623_1 -> l623_2 -> l623_3)
 w182     CD5 flag (actually combinatorial and not a latch)
-w183     DATA/CTRL access detect, set 4.0 DCLK later, reset 4.5 DCLK later
+w183     End of DATA/CTRL access? detect, set 4.0 DCLK later, reset 4.5 DCLK later
 w184     DATA/CTRL access detect, set 2.5 DCLK later, reset 3.5 DCLK later (used by w193 when detecting register writes)
 w185     Selects between current (1) or autoincremented (0) address
 w186     (part of the logic for w187 and w188, latched through l27)
@@ -207,11 +207,11 @@ w271     Sets t28 when a FIFO flush happens while in DMA
 w272     [?] Set when DMA fill can proceed? (after the initial write is done) (goes to l50)
 w273     68000 and 64KB VRAM and CD2:1 == 0 (VRAM) // 68000 and CD == 8-bit VRAM write
 w274     68000 and 64KB VRAM
-w276     Upper byte FIFO write strobe (68000 bus)
+w276     Upper byte FIFO write strobe (68000 bus), also held high by DMA access
 w277     Upper byte FIFO write (see l55..l58)
-w278     Lower byte FIFO write strobe (68000 bus)
+w278     Lower byte FIFO write strobe (68000 bus), also held high by DMA access
 w279     Lower byte FIFO write (see l59..l62)
-w280     Which FIFO byte is being written in mode 5 (Z80 bus)
+w280     Which FIFO byte is being written in mode 5 (used with Z80 bus)
 w281     [?] DMA copy write to odd address?
 w282     [?] DMA copy write to even address?
 w283     VRAM write to upper byte? (used to detect sprite cache writes, see w693)
@@ -560,21 +560,22 @@ w705     reg_test_18[6:5] == 2 (low logic) Use latched sprite [other] for w770
 w706     reg_test_18[6:5] == 1 (low logic) Use latched sprite pattern l425 for w770
 w707     reg_test_18[6:5] == 0 (low logic) Use latched sprite X coordinate for w770
 w717     (part of w738 logic, test register use only)
-w731     Mode 4 sprite 8x1 fetch Y offset
+w731     Mode 4 sprite 8x1 fetch tile ID
 w732     [???] (from w738, throws in more test register stuff)
-w733     Mode 4 sprite 8x1 fetch address bit 2
-w734     Mode 4 sprite 8x1 fetch address bit 3
-w735     Mode 4 sprite 8x1 fetch address bit 4
-w737     Mode 4 sprite 8x1 fetch address bit 5
+w733     Mode 4 sprite Y offset bit 0 / sprite 8x1 fetch address bit 2
+w734     Mode 4 sprite Y offset bit 1 / sprite 8x1 fetch address bit 3
+w735     Mode 4 sprite Y offset bit 2 / sprite 8x1 fetch address bit 4
+w736     Mode 4 sprite Y offset bit 3
+w737     Mode 4 sprite 8x1 fetch address bit 5 (either w731[0] or w736 depending on sprite size setting)
 w738     [???] w717 when reg_test0[14] == 0
 w740     Is VRAM address within sprite table range
 w741     Is VRAM address within sprite cache range
 w742     Timing signal: sprite tile fetch for mode 4 (enables VRAM bus)
 w743     Picks last relevant bit of l410 ([19] for H40, [15] for H32, [7] for m4, tied to max sprite count?)
-w744     Latches VRAM data into l435 (related to sprites?)
+w744     Latches VRAM data into l435 (sprite X position for mode 4?)
 w745     Set to latch VRAM data into l386 (1st byte? of sprite Y in mode 4)
 w746     Set to latch VRAM data into l387 (2nd byte? of sprite Y in mode 4)
-w749     Latches VRAM data into l436 (related to sprites?)
+w749     Latches VRAM data into l436 (sprite X position for mode 4?)
 w751     Timing signal: sprite tile fetch for mode 4 (w742, before it's locked out of mode 5)
 w752     Sprite index to access (from l400, latched to l403..l409)
 w753     (swaps l382 with test reg 6 writes before passing it to l410)
@@ -600,8 +601,8 @@ w776     [???] Set if mode 5 and not resetting the sprite slices counter
 w778     Computes the tile ID offset within sprite from the sprite's Y offset
 w779     Tile ID offset within sprite (i.e. add to sprite's base tile ID)
 w780     What tile ID to read when fetching a sprite's 8x1px (goes to VRAM address)
-w781     Sprite tile fetch for mode 5 (sets l428 which enables VRAM bus)
 w782     [???] Set if sprite X is not 0
+w788     Mux which picks which byte is used for base sprite X in mode 4 (l435 or l436) (select value is l422)
 w789     Set to in/decrement the current sprite X (through w790 or w798)
 w790     Go to previous linebuffer address? (decrements w802 by -1)
 w791     (used to build an operand for w800) m5 sprite hflip 16px/32px OR m4 w/8px shift
@@ -612,7 +613,7 @@ w795     (used to build an operand for w800) m5 sprite hflip
 w796     (used to build an operand for w800) m4 w/8px shift
 w797     (used to build an operand for w800) m5 sprite OR m4 w/8px shift
 w798     Go to next linebuffer address? (increments w802 by +1)
-w799     (used to build an operand for w800) base X coordinate
+w799     Base sprite X coordinate (used to build an operand for w800)
 w800     Initial(?) X column for a sprite in the linebuffer (in 8px steps) (-128px offset is applied here!!)
 w801     Selects between w800 and w802 (use new linebuffer address or modify current one?)
 w802     Linebuffer address to write to (derived from w800 and regularly incremented or decremented by 1)
@@ -622,7 +623,7 @@ w805     Same as w804 but limited to hclk1, used to reload l473 (which then is l
 w806     Actual sprite width NOT'd, bit 0 (from l442 in mode 5, forced to 8px in mode 4), loaded into l457
 w807     Actual sprite width NOT'd, bit 1 (from l442 in mode 5, forced to 8px in mode 4), loaded into l457
 w808     Set when l457 (width counter) becomes 11, used by w804 & w805 to detect end of sprite
-w809     in M4 = H counter + $1F4+1 ($1F5), in M5 = H counter + $1ED+1 ($1EE)
+w809     Linebuffer address when showing it on screen; in M4 = H counter + $1F4+1 ($1F5), in M5 = H counter + $1ED+1 ($1EE)
 w810     Set if w802 is within viewport range (if RS1=0: w802 < 32, if RS1=1: w802 < 40)
 w811     Sprite priority (once gated by w803, from l451) and viewport area + display enabled (forced to 0 otherwise)
 w812     Sprite palette (once gated by w803, from l453) and viewport area + display enabled (forced to 0 otherwise)
@@ -631,8 +632,9 @@ w814     Merges ~l454 and l460 to generate write enable pulses for sprites
 w815     (from l462) Signals when the linebuffer write enables happen (+ test reg 0 bit 13)
 w816     (used to stretch w814 for one DCLK cycle longer)
 w817     Line buffer write enable (global)
-w818     (something to do with linebuffer write enable?)
+w818     w819 (via l465) OR test reg 0 bit 13 set (something to do with linebuffer write enable?)
 w819     (something to do with linebuffer write enable?) hclk2 only if display enabled (low logic)
+w820     Set if w821 == 1 OR if H counter[2:0] == 3'h2 in m4 or 3'h1 in m5 (then latched in l466)
 w821     NOT set while in viewport area and active scan (timing adjusted for mode 4 or 5)
 w822     When set (from w821), use l474 (from w802) as line buffer address
 w823     When set, use l475 (from w809) as line buffer address
@@ -647,13 +649,13 @@ w832     (used to set up the latches that do timing of w833 and w834)
 w833     Timing: set to latch 3rd byte of a sprite's 8x1 px
 w834     Timing: set to latch 4th byte of a sprite's 8x1 px
 w835     Timing: set to copy latched sprite 8x1 bytes into l491-l494 (the work copy)
-w836     When 0, starts the chain to pick pixels for w843 (goes to l495, and indirectly to w837)
-w837     Set=0 to pick pixels #0 and #1 for w843_1 (for mode 5, with hflip support)
-w838     Set=0 to pick pixels #2 and #3 for w843_1 (for mode 5, with hflip support)
-w839     Set=0 to pick pixels #4 and #5 for w843_1 (for mode 5, with hflip support)
-w840     Set=0 to pick pixels #6 and #7 for w843_1 (for mode 5, with hflip support)
-w841     Set when sprite rendering during mode 5?
-w842     Set when sprite rendering during mode 4?
+w836     When 0, starts the chain to pick pixels for w843 (goes to l495 and w846)
+w837     Set=0 to pick pixels #6 and #7 for w843_1 (for mode 5, with hflip support)
+w838     Set=0 to pick pixels #4 and #5 for w843_1 (for mode 5, with hflip support)
+w839     Set=0 to pick pixels #2 and #3 for w843_1 (for mode 5, with hflip support)
+w840     Set=0 to pick pixels #0 and #1 for w843_1 (for mode 5, with hflip support)
+w841     NOT end of viewport while in mode 5, used for sprite rendering
+w842     NOT end of viewport while in mode 4, used for sprite rendering
 w843     Seems to pick ONE pair of pixels and rearrange sprite pixel bits (mode 4 vs. mode 5) during rendering
 w843_1   Sprite pixels in mode 5 format (chunky)
 w843_2   Sprite pixels in mode 4 format (planar)
@@ -669,30 +671,34 @@ w852     (low logic) Select pixels #0-#1 for test write to line buffer (writing 
 w853     (low logic) Select pixels #2-#3 for test write to line buffer (writing to test reg 8 while $C00018[7:6] == 01)
 w854     (low logic) Select pixels #4-#5 for test write to line buffer (writing to test reg 8 while $C00018[7:6] == 10)
 w855     (low logic) Select pixels #6-#7 for test write to line buffer (writing to test reg 8 while $C00018[7:6] == 11)
+w856     Writing test reg 8 pixels #0-#1 OR w818 == 0
+w857     Writing test reg 8 pixels #2-#3 OR w818 == 0
+w858     Writing test reg 8 pixels #4-#5 OR w818 == 0
+w859     Writing test reg 8 pixels #6-#7 OR w818 == 0
 w860     Set when X is right to store pixel #0 when rotating sprite pixels
-w861     Set when X is right to Store pixel #1 when rotating sprite pixels
-w862     Set when X is right to Store pixel #2 when rotating sprite pixels
-w863     Set when X is right to Store pixel #3 when rotating sprite pixels
-w864     Set when X is right to Store pixel #5 when rotating sprite pixels (yes #4 is out of sequence, see w823)
-w865     Set when X is right to Store pixel #6 when rotating sprite pixels
-w866     Set when X is right to Store pixel #7 when rotating sprite pixels
+w861     Set when X is right to store pixel #1 when rotating sprite pixels
+w862     Set when X is right to store pixel #2 when rotating sprite pixels
+w863     Set when X is right to store pixel #3 when rotating sprite pixels
+w864     Set when X is right to store pixel #5 when rotating sprite pixels (yes #4 is out of sequence, see w828)
+w865     Set when X is right to store pixel #6 when rotating sprite pixels
+w866     Set when X is right to store pixel #7 when rotating sprite pixels
 w867     Set during sprite drawing when X[2:0] is +2px (within an 8px boundary)
 w868     Set during sprite drawing when X[2:0] is +3px (within an 8px boundary)
 w869     Set during sprite drawing when X[2:0] is +4px (within an 8px boundary)
 w870     Set during sprite drawing when X[2:0] is +6px (within an 8px boundary)
 w871     Set during sprite drawing when X[2:0] is +7px (within an 8px boundary)
 w872     Set to store pixel #0 when rotating sprite pixels (to l515, on clk1)
-w873     (used to simplify logic with w860..w866)
+w873     Sprite x[2:0] == 1 or w877 (used to simplify logic with w860..w866)
 w874     Set to store pixel #1 when rotating sprite pixels (to l516, on clk1)
 w875     Set to store pixel #2 when rotating sprite pixels (to l517, on clk1)
-w876     (used to simplify logic with w860..w866)
+w876     Sprite x[2:0] == 3 or w877 (used to simplify logic with w860..w866)
 w877     Forces all 8 sprite pixels to be "rotated" already (for test reg 0 bit 13, dunno when it triggers)
 w878     Set to store pixel #3 when rotating sprite pixels (to l518, on clk1)
 w879     Set to store pixel #4 when rotating sprite pixels (to l519, on clk1)
-w880     (used to simplify logic with w860..w866)
+w880     Sprite x[2:0] == 5 or w877 (used to simplify logic with w860..w866)
 w881     Set to store pixel #5 when rotating sprite pixels (to l520, on clk1)
 w882     Set to store pixel #6 when rotating sprite pixels (to l521, on clk1)
-w883     (used to simplify logic with w860..w866)
+w883     Sprite x[2:0] == 7 or w877 (used to simplify logic with w860..w866)
 w884     Set to store pixel #7 when rotating sprite pixels (to l522, on clk1)
 w885     Set when rotated sprite pixels are ready to be copied into l523..l530
 w886     Set if we determined we have to draw sprite pixel #0 within a 8px boundary
@@ -703,14 +709,14 @@ w890     Set if we determined we have to draw sprite pixel #4 within a 8px bound
 w891     Set if we determined we have to draw sprite pixel #5 within a 8px boundary
 w892     Set if we determined we have to draw sprite pixel #6 within a 8px boundary
 w893     Set if we determined we have to draw sprite pixel #7 within a 8px boundary
-w902     Determines whether line buffer pixel #0 will be written
-w903     Determines whether line buffer pixel #1 will be written
-w904     Determines whether line buffer pixel #2 will be written
-w905     Determines whether line buffer pixel #3 will be written
-w906     Determines whether line buffer pixel #4 will be written
-w907     Determines whether line buffer pixel #5 will be written
-w908     Determines whether line buffer pixel #6 will be written
-w909     Determines whether line buffer pixel #7 will be written
+w902     Determines whether line buffer pixel #0 will be written (latched in l538)
+w903     Determines whether line buffer pixel #1 will be written (latched in l539)
+w904     Determines whether line buffer pixel #2 will be written (latched in l540)
+w905     Determines whether line buffer pixel #3 will be written (latched in l541)
+w906     Determines whether line buffer pixel #4 will be written (latched in l542)
+w907     Determines whether line buffer pixel #5 will be written (latched in l543)
+w908     Determines whether line buffer pixel #6 will be written (latched in l544)
+w909     Determines whether line buffer pixel #7 will be written (latched in l545)
 w910     Line buffer write enable pixel #0
 w911     Line buffer write enable pixel #1
 w912     Line buffer write enable pixel #2
@@ -727,14 +733,14 @@ w922     Old sprite data pixel #4 opaque
 w923     Old sprite data pixel #5 opaque
 w924     Old sprite data pixel #6 opaque
 w925     Old sprite data pixel #7 opaque
-w926     New and old sprite px #0 opaque + something else? (check for sprite collision)
-w927     New and old sprite px #1 opaque + something else? (check for sprite collision)
-w928     New and old sprite px #2 opaque + something else? (check for sprite collision)
-w929     New and old sprite px #3 opaque + something else? (check for sprite collision)
-w930     New and old sprite px #4 opaque + something else? (check for sprite collision)
-w931     New and old sprite px #5 opaque + something else? (check for sprite collision)
-w932     New and old sprite px #6 opaque + something else? (check for sprite collision)
-w933     New and old sprite px #7 opaque + something else? (check for sprite collision)
+w926     New and old sprite px #0 opaque + output mask for this pixel? (check for sprite collision)
+w927     New and old sprite px #1 opaque + output mask for this pixel? (check for sprite collision)
+w928     New and old sprite px #2 opaque + output mask for this pixel? (check for sprite collision)
+w929     New and old sprite px #3 opaque + output mask for this pixel? (check for sprite collision)
+w930     New and old sprite px #4 opaque + output mask for this pixel? (check for sprite collision)
+w931     New and old sprite px #5 opaque + output mask for this pixel? (check for sprite collision)
+w932     New and old sprite px #6 opaque + output mask for this pixel? (check for sprite collision)
+w933     New and old sprite px #7 opaque + output mask for this pixel? (check for sprite collision)
 w934     New sprite data pixel #0 opaque
 w935     New sprite data pixel #1 opaque
 w936     New sprite data pixel #2 opaque
@@ -780,10 +786,10 @@ w975     l556 == 2'h3 (sprite S/H palette check?)
 w976     l558 != 4'h0 (sprite not transparent pixel check?)
 w977     l558 == 4'hE (sprite S/H highlight pixel check?)
 w978     l558 == 4'hF (sprite S/H shadow pixel check?)
-w979     Line buffer write data priority (odd?)
-w980     Line buffer write data palette (odd?)
-w982     Line buffer write data priority (even?)
-w983     Line buffer write data palette (even?)
+w979     Line buffer write data priority (2nd, 4th, 6th, 8th pixels)
+w980     Line buffer write data palette (2nd, 4th, 6th, 8th pixels)
+w982     Line buffer write data priority (1st, 3rd, 5th, 7th pixels)
+w983     Line buffer write data palette (1st, 3rd, 5th, 7th pixels)
 w985     VRAM read enable (high logic)
 w986     VRAM lower byte write enable (high logic), goes to /WE0 (as low logic)
 w987     VRAM upper byte write enable (high logic), goes to /WE1 (as low logic)
@@ -936,8 +942,8 @@ l8       (delays l7 by half a dot, uninverted)
 l9       End of interrupt acknowledge (from w48, to l10)
 l10      End of interrupt acknowledge (from l9, to l11)
 l11      End of interrupt acknowledge (from l10)
-l12      [has another use with w51] Used to reset t6 two cycles after it's set (t6 -> l12 -> l13)
-l13      [has another use with w52] Used to reset t6 two cycles after it's set (t6 -> l12 -> l13)
+l12      [has another use with w51] Used to reset t6 two dots after it's set (t6 -> l12 -> l13)
+l13      [has another use with w52] Used to reset t6 two dots after it's set (t6 -> l12 -> l13)
 l14      Clear sprite overflow and collision flags on vblank (F flag too if mode 4)
 l18      Select between DATA and CTRL port for writes (latched when NOT writing the ports)
 l19      Select between DATA and CTRL port for reads (latched when NOT reading the ports, used by w143)
@@ -1177,8 +1183,12 @@ l371     Sprite to render index (to w697->sprite queue index)
 l372     Set if hpos = 258+2 (H32) or 322+2 (H40), 2 dots later than when F flag is cleared (from w360)
 l376     ??? (delays the output from w743 by 20 DCLK, output goes to w714)
 l382     Related to sprite fetch timing? (from w418, from l145 and l155, goes to l410)
-l386     Sprite Y position for mode 4 (1st byte? of a pair), latched from VRAM on w745
-l387     Sprite Y position for mode 4 (2nd byte? of a pair), latched from VRAM on w746
+l386     Sprite tile ID for mode 4 (1st sprite of a pair), latched from VRAM on w745
+l387     Sprite tile ID for mode 4 (2nd sprite of a pair), latched from VRAM on w746
+l388     Shift register holding Y row offsets for sprites in mode 4 (bit 0, 10 entries)
+l389     Shift register holding Y row offsets for sprites in mode 4 (bit 1, 10 entries)
+l390     Shift register holding Y row offsets for sprites in mode 4 (bit 2, 10 entries)
+l391     Shift register holding Y row offsets for sprites in mode 4 (bit 3, 10 entries)
 l398     Sprite table index to access (from w696, to l399)
 l399     Sprite table index to access (from l398, to l400)
 l400     Sprite table index to access (from l399, to l403..l409 via w752)
@@ -1197,14 +1207,18 @@ l415     Sprite priority latch
 l416     Sprite width latch
 l417     Sprite height latch
 l418     Sprite Y offset latch (goes to VRAM address)
+l419     (one dot later than l511, toggles l421 when set)
 l420     Number of 8x1 sprite slices left? (loaded with sprite width latch *negated*, incremented by l141)
-l422     Picks which byte is used (l435 or l436)
+l421     Picks which byte is used for base sprite X in mode 4 (reset by w360, toggled by l419, goes to l422)
+l422     Picks which byte is used for base sprite X in mode 4 (l435 or l436) (the mux is w788)
 l424     Sprite pattern latch
 l425     Sprite X coordinate latch, mode 5
 l426     [???] (gates something related to sprites queued for render?)
 l428     Enables VRAM address when reading 8x1px for a sprite for mode 5
-l435     Latch to hold input from VRAM, 1st byte (related to sprite data?)
-l436     Latch to hold input from VRAM, 2nd byte (related to sprite data?)
+l429     [???] Set if sprite X is not 0 (latched from w782)
+l435     Latch to hold input from VRAM, 1st byte (sprite X position for mode 4?)
+l436     Latch to hold input from VRAM, 2nd byte (sprite X position for mode 4?)
+l437     Base sprite X coordinate in mode 4 (for w799)
 l438     (from w773, 1 dot delay)
 l439     Sprite hflip latch (11 DCLK later than l413)
 l440     Sprite palette latch (11 DCLK later than l414)
@@ -1228,26 +1242,32 @@ l461     Selects whether we're drawing to the left or right of a 8px line buffer
 l462     Signals when the linebuffer write enables happen (1 DCLK after w814, to w815)
 l463     (used to stretch w814 for +1 DCLK)
 l464     (used to stretch w951 for +1 DCLK)
+l466     Latches the result of w820, delays by half a dot (aligns to hclk1)
+l467     Latches bit 2 of w809, delays by 1 dot (so H counter[2:0] +6 in m4 or +7 in m5)
+l468     Latches bit 1 of w809, delays by 1 dot (so H counter[2:0] +6 in m4 or +7 in m5)
+l469     Latches bit 0 of w809, delays by 1 dot (so H counter[2:0] +6 in m4 or +7 in m5)
 l470     Set while in viewport area and active scan (from w388->l471, 2 dots (4 DCLK) later)
 l471     Set while in viewport area and active scan (from w388, 1 dot (2 DCLK) later, goes to l470)
 l472     Bits 2:0 of the X coordinate when drawing sprites (from l473->w799, 1 more DCLK later)
 l473     Bits 2:0 of the X coordinate when drawing sprites (from w799 to l472, loaded on w805)
-l478     4th byte when reading sprite 8x1 pixels (from VRAM), latched on w830
-l479     3rd byte when reading sprite 8x1 pixels (from VRAM), latched on w829
-l480     2nd byte when reading sprite 8x1 pixels (from VRAM), latched on w833
-l481     1st byte when reading sprite 8x1 pixels (from VRAM), latched on w834
-l482     Timing: set to latch 2nd byte of a sprite's 8x1 px (goes to w829 to limit it to a pulse)
-l483     Timing: set to latch 1st byte of a sprite's 8x1 px (goes to w830 to limit it to a pulse)
-l484     Timing: set to latch 3rd byte of a sprite's 8x1 px (goes to w833 to limit it to a pulse)
-l485     Timing: set to latch 4th byte of a sprite's 8x1 px (goes to w834 to limit it to a pulse)
-l486     3rd byte when reading sprite 8x1 pixels (from l479), latched on w834
-l487     2nd byte when reading sprite 8x1 pixels (from l480), latched on w834
-l488     1st byte when reading sprite 8x1 pixels (from l481), latched on w834
+l474     Linebuffer address when drawing into it
+l475     Linebuffer address when showing it on screen (latched from w809, derived from H counter)
+l478     4th byte (2nd word high byte) when reading sprite 8x1 pixels (from VRAM), latched on w834
+l479     3rd byte (2nd word low byte) when reading sprite 8x1 pixels (from VRAM), latched on w833
+l480     2nd byte (1st word high byte) when reading sprite 8x1 pixels (from VRAM), latched on w829
+l481     1st byte (1st word low byte) when reading sprite 8x1 pixels (from VRAM), latched on w830
+l482     Timing: set to latch 2nd byte (1st word high byte) of a sprite's 8x1 px (goes to w829 to limit it to a pulse)
+l483     Timing: set to latch 1st byte (1st word low byte) of a sprite's 8x1 px (goes to w830 to limit it to a pulse)
+l484     Timing: set to latch 3rd byte (2nd word low byte) of a sprite's 8x1 px (goes to w833 to limit it to a pulse)
+l485     Timing: set to latch 4th byte (2nd word high byte) of a sprite's 8x1 px (goes to w834 to limit it to a pulse)
+l486     3rd byte (2nd word low byte) when reading sprite 8x1 pixels (from l479), latched on w834
+l487     2nd byte (1st word high byte) when reading sprite 8x1 pixels (from l480), latched on w834
+l488     1st byte (1st word low byte) when reading sprite 8x1 pixels (from l481), latched on w834
 l490     Timing: set to copy latched sprite 8x1 bytes into l491-l494 (the work copy) (goes to w835 to limit it to a pulse)
-l491     1st byte when reading sprite 8x1 pixels (from l481->l488), latched on w835, used for processing
-l492     2nd byte when reading sprite 8x1 pixels (from l480->l487), latched on w835, used for processing
-l493     3rd byte when reading sprite 8x1 pixels (from l479->l486), latched on w835, used for processing
-l494     4th byte when reading sprite 8x1 pixels (from l478), latched on w835, used for processing
+l491     4th byte (2nd word high byte) when reading sprite 8x1 pixels (from l478), latched on w835, used for processing
+l492     3rd byte (2nd word low byte) when reading sprite 8x1 pixels (from l479->l486), latched on w835, used for processing
+l493     2nd byte (1st word high byte) when reading sprite 8x1 pixels (from l480->l487), latched on w835, used for processing
+l494     1st byte (1st word low byte) when reading sprite 8x1 pixels (from l481->l488), latched on w835, used for processing
 l495     Set=0 to pick pixels #0 and #1 for w843_2 (for mode 4, without hflip support) (also used by w837)
 l496     Set=0 to pick pixels #2 and #3 for w843_2 (for mode 4, without hflip support) (also used by w838)
 l497     Set=0 to pick pixels #4 and #5 for w843_2 (for mode 4, without hflip support) (also used by w839)
@@ -1304,6 +1324,7 @@ l555     Used to delay sprite layer color from line buffer? (delayed by 1 dot in
 l556     (latches w970's value and delays it by 1 more dot)
 l557     (latches w971's value and delays it by 1 more dot)
 l558     (latches w972's value and delays it by 1 more dot)
+l562     Stores w877 and delays it by 1 dot (to next DCLK negedge)
 l568     VRAM write to lower byte (from w991, delayed by one dot)
 l571     VRAM write to upper byte (latched from w286, goes to w991)
 l574     (use unknown?) Free VRAM slot (CPU access allowed) (latched from l109)
@@ -1381,9 +1402,9 @@ t14      Seems to be set while VDP is waiting for data from VRAM/CRAM/VSRAM to b
 t15      Which command byte to write next in SMS mode? (t16 gated by w154?)
 t16      Which command byte to write next in SMS mode?
 t18      Which command word to write next? (0: low, 1: high)
-t19      CPU upper byte strobe (set by UDS, clear by w189)
-t20      CPU lower byte strobe (set by LDS, clear by w189)
-t21      In the middle of a DATA port write
+t19      CPU upper byte strobe (set by UDS, clear by w183)
+t20      CPU lower byte strobe (set by LDS, clear by w183)
+t21      In the middle of a DATA port write (set by w169, clear by w183)
 t25      Writing command bits 15:8 (set by w164, clear by w176)
 t28      Set when a FIFO entry is flushed during DMA, reset when DMA finishes
 t29      Set when in viewport area (horizontally)
