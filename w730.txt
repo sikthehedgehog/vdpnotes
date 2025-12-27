@@ -1,0 +1,53 @@
+w722     Sprite V flip and height >= 2'b01 (height == 16px,24px,32px), used in w730
+w723     Sprite V flip and height == 2'b10 (height == 24px), used in w726
+w724     Sprite V flip and height >= 2'b10 (height == 24px,32px), used in w730
+l379[1:0]   Holds sprite height when about to insert one into the sprite render list
+l384[4]     Sprite V flip flag
+
+	assign w722 = l387[4] & (l379[1] | l379[0]);
+	assign w723 = l387[4] & l379[1] & ~l379[0];
+	assign w724 = l387[4] & l379[1];
+
+w106     Interlaced mode 2 enable (high resolution)
+w725     Sprite Y tile offset (derived from Y in px, adjusted for interlaced mode)
+w726     Adds 1 to sprite Y tile offset (see w725) if width is 3 tiles
+w730     Actual sprite Y offset in tiles after vertical flipping (see w730.txt)
+l380     Sprite Y position bits 6:0 after offset applied (from 1+l340+w653 -> w662), before V flip is applied
+
+	assign w725 = w106 ? l380[5:4] : l380[4:3];
+	assign w726 = w725 + {1'h0, w723};
+	assign w730 = w726 ^ { w724, w722 };
+
+w729     Bits 5:3 of sprite Y offset to insert into sprite render list
+l380     Sprite Y position bits 6:0 after offset applied (from 1+l340+w653 -> w662), before V flip is applied
+
+	assign w729 = w106 ? { w730, w728[3] } : { l380[5], w730 };
+
+
+
+height   Y offset    w722 w723 w724 w725   w726 w730
+-------- --------    ---- ---- ---- ----   ---- ----
+no flip  0 tiles  ->   0    0    0   00     00   00 -> 0 *
+no flip  1 tile   ->   0    0    0   01     01   01 -> 1
+no flip  2 tiles  ->   0    0    0   10     10   10 -> 2
+no flip  3 tiles  ->   0    0    0   11     11   11 -> 3
+
+1 tile   0 tiles  ->   0    0    0   00     00   00 -> 0 *
+1 tile   1 tile   ->   0    0    0   01     01   01 -> 1
+1 tile   2 tiles  ->   0    0    0   10     10   10 -> 2
+1 tile   3 tiles  ->   0    0    0   11     11   11 -> 3
+
+2 tiles  0 tiles  ->   1    0    0   00     00   01 -> 1 *
+2 tiles  1 tile   ->   1    0    0   01     01   00 -> 0 *
+2 tiles  2 tiles  ->   1    0    0   10     10   11 -> 3
+2 tiles  3 tiles  ->   1    0    0   11     11   10 -> 2
+
+3 tiles  0 tiles  ->   1    1    1   00     01   10 -> 2 *
+3 tiles  1 tile   ->   1    1    1   01     10   01 -> 1 *
+3 tiles  2 tiles  ->   1    1    1   10     11   00 -> 0 *
+3 tiles  3 tiles  ->   1    1    1   11     00   11 -> 3
+
+4 tiles  0 tiles  ->   1    0    1   00     00   11 -> 3 *
+4 tiles  1 tile   ->   1    0    1   01     01   10 -> 2 *
+4 tiles  2 tiles  ->   1    0    1   10     10   01 -> 1 *
+4 tiles  3 tiles  ->   1    0    1   11     11   00 -> 0 *

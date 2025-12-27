@@ -37,7 +37,16 @@ Writing to `$C0001C`:
     - `11` = force enable plane B
     - Note: must be `00` for background plane to display.
 * Bits 11:9 override PSG output. When bit 9 is set, bits 11:10 select a PSG channel to output and the rest are muted.
-* Bit 12 is not fully understood, but it seems to let you write sprite properties to one of the internal lists?
+* Bit 12 is not fully understood, but it seems to let you insert sprites into the list of sprites to render? The format of the data is as follows (to-do: check *when* the writes happen, order of the words may be wrong):
+	- 1st word: tile ID in bits 10:0
+	- 2nd word: X position in bits 8:0
+	- 3rd word:
+		+ Bit 0 = horizontal flip
+		+ Bits 2:1 = palette number
+		+ Bit 3 = priority flag
+		+ Bits 5:4 = sprite width
+		+ Bits 7:6 = sprite height
+		+ Bits 13:8 = Y offset within sprite
 * Bit 13 seems to give direct access to the sprite linebuffer when set (sprite rendering is disabled). Meant to be used in conjunction with test register $8.
 * Bit 15 seems to be unused.
 
@@ -116,7 +125,7 @@ Reading from `$C0001C` seems to return information about the current sprite bein
 
 ## Test register $8
 
-Seems to give direct access to the sprite linebuffer when test register $0 bit 13 = 1.
+Seems to give direct access to the sprite linebuffer when test register $0 bit 13 = 1. Sprite rendering is "disabled" when this bit is set (i.e. it still tries to render but it can't touch the linebuffer).
 
 Bits 5:0 of `$C00018` select a 8px boundary within the linebuffer. Bits 7:6 of `$C00018` select a pair of pixels within the current 8px boundary. In other words:
 
