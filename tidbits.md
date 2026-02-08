@@ -66,3 +66,22 @@ Surprisingly mode 5 seems to be usable in SMS mode as the VDP explicitly makes s
 Data reads have to be examined yet, but I would be surprised if it's any different than for data writes.
 
 It isn't known yet whether DMA transfer works in SMS mode (probably not), but if it does, source address will be measured in bytes instead of words (unlike MD mode), since the source address is used as-is on the address bus. DMA copy and fill work as expected, as they don't involve the CPU bus.
+
+## Unused logic
+
+There's a bunch of logic in the VDP that either goes nowhere or has been otherwise nullified.
+
+- `w17`: not connected. Seems to have something to do with refresh and FIFO being full.
+
+- `w262`: not connected. It's a combination of `w300` (flushing second byte of a word write to 8-bit VRAM) and `w248` (DMA fill in progress).
+
+- `w703` and `w704`: they increment and decrement `l371`, respectively. The former is `w702` AND 1, the latter is `w702` AND 0, which means that in practice `w702` is increment and there's no way to decrement. Who knows what the logic was originally supposed to be?
+
+- `w777` and `l427`: the former is latched by the latter, but the latter's output is not connected anywhere. (TODO: describe what `w777`'s logic is)
+
+- `w942` to `w950`: looks like at one point it was possible to select whether sprites would overwrite or underwrite other sprites drawn earlier, where `w950` selected which of the two to use (`w942` to `w949` are the muxes for each pixel). In practice `w950` is hardwired to always select underwrite.
+
+- The behavior of window plane differs between modes 4 and 5. In mode 5, both window registers are latched every scanline; in mode 4, the horizontal register is latched every scanline and the vertical register at the top of the screen. This matches the behavior of scroll, but… window plane is not supported in mode 4 anyway (VDP explicitly disables window fetches if not in mode 5). What gives?
+	+ Note that this behavior *is* technically observable if you switch between video modes, though you'll have to fight sync alignment issues as well if you attempt that and you can only see it for one scanline anyway. It's "unused" if you stick to mode 4, however.
+
+- The logic for plane B tilemap fetches checks for the window plane just like plane A does. This is nullified by the fact that the "in window" check logic explicitly limits itself to when plane A fetches happen.

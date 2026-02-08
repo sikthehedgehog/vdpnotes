@@ -37,20 +37,29 @@ Writing to `$C0001C`:
     - `11` = force enable plane B
     - Note: must be `00` for background plane to display.
 * Bits 11:9 override PSG output. When bit 9 is set, bits 11:10 select a PSG channel to output and the rest are muted.
-* Bit 12 is not fully understood, but it seems to let you insert sprites into the list of sprites to render? The format of the data is as follows (to-do: check *when* the writes happen, order of the words may be wrong):
-	- 1st word: tile ID in bits 10:0
-	- 2nd word: X position in bits 8:0
-	- 3rd word:
-		+ Bit 0 = horizontal flip
-		+ Bits 2:1 = palette number
-		+ Bit 3 = priority flag
-		+ Bits 5:4 = sprite width
-		+ Bits 7:6 = sprite height
-		+ Bits 13:8 = Y offset within sprite
+* Bit 12 is not fully understood, but it seems to let you insert sprites into the list of sprites to render? (see subsection below)
 * Bit 13 seems to give direct access to the sprite linebuffer when set (sprite rendering is disabled). Meant to be used in conjunction with test register $8.
 * Bit 15 seems to be unused.
 
 The way VDP implements multiplexers is that each input is gated and then merged. The layer mux select is a _huge_ string of this, and when bits 8:7 are used to forcefully enable a plane that shouldn't be displayed, it'll interfere with the plane that's supposed to show up (this seems to be a bus fight, in many later VDPs it tends to look like an AND but it may also show up as noise instead).
+
+### Sprite render list access
+
+**This section is incomplete!! We still need to find out what triggers the write!**
+
+When bit 12 is set, the VDP stops writing to the list holding the sprites to render this line, enabling manual writing to it. The mechanism to write to it is still unknown, but the format of the data is as follows (word order may be wrong):
+
+- 1st word: tile ID in bits 10:0
+- 2nd word: X position in bits 8:0
+- 3rd word:
+	+ Bit 0 = horizontal flip
+	+ Bits 2:1 = palette number
+	+ Bit 3 = priority flag
+	+ Bits 5:4 = sprite width
+	+ Bits 7:6 = sprite height
+	+ Bits 13:8 = Y offset within sprite
+
+The index to write to is selected by bits 4:0 of `$C00018`. Values from 0 to 19 should be valid.
 
 ## Test register $1
 

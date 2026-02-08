@@ -18,3 +18,7 @@ By general rule, boxes with solid borders introduce an intentional delay (i.e. w
 The boxes only include a loose description while the original wire names are still included in them. Refer to the Verilog file for exact details. Sometimes two boxes will refer to the same wire, this usually happens if there's a lot going on in a single expression (conversely, sometimes multiple wires may be merged into a single box if they make a single computation).
 
 Sometimes lines or boxes will have colors, these are only intended to make it easier to trace where something came from and don't have any real meaning.
+
+## Notes
+
+* Shadow/highlight logic is in `layer_mux_sh`. I *could* have called it `shadow_highlight`, but it's tightly integrated with the layer multiplexer so I opted to group it with the rest of it.
