@@ -1,4 +1,4 @@
-// Plane B tile latch timing
+// Plane B tile latch timing (i.e. latching the data)
 // (note: plane B latches even when not needed)
 
 // H counter is multiple of 16px + 15

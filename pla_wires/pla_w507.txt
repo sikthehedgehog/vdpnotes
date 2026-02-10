@@ -1,4 +1,4 @@
-// Plane A tile latch timing I guess?
+// Plane A tile latch timing (i.e. latching the data)
 // (note: plane A latches even when not needed)
 
 // Mode 4: H counter is multiple of 8px + 7

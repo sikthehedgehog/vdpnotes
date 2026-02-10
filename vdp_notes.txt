@@ -320,6 +320,7 @@ w388     Set while in viewport area and active scan (also in l470 two dots later
 w389     Set while in viewport area (in H and V range and display enabled)
 w390     Pre-vsync or post-vsync in mode 5 (NOT during vsync itself!)
 w392     Combines l137 (start of right border) with reset to force border on VDP reset, goes to t29
+w393     Passes the PLA signal from w507/l133 only if test reg 1[6:4] == 3'b000
 w394     Timing signal: fetch plane A or B tile data (2nd half) (from l126)
 w395     (part of the expression in w359)
 w396     Hsync (for current mode)
@@ -328,6 +329,7 @@ w398     Select between full hsync pulses and half hsync pulses
 w399     Timing for half hsync pulses? (~w398 AND mid-line hsync pulses)
 w400     Pre-vsync or post-vsync in mode 5 and mid-line hsync pulses?
 w401     Start of hblank OR reset
+w402     Passes the PLA signal from w508/l140 only if test reg 1[6:4] == 3'b000
 w403     ??? (just merges w410 with its delayed signal)
 w404     Hsync output gated by hsync dir bit (comes from w396, goes to l136)
 w405     Timing for full hsync pulses? (w398 AND normal hsync pulses)
@@ -501,8 +503,17 @@ w584     Plane A hflip flag (read from VRAM), adjusted for mode 4/5
 w585     Plane A vflip flag (read from VRAM), adjusted for mode 4/5
 w586     Plane A palette flags (read from VRAM), adjusted for mode 4/5
 w587     Plane A priority flag (read from VRAM), adjusted for mode 4/5
-w592     ??? (copies l223..l226 to l232..l235, l243..l246 to l255..l258, l259 to l260 when set)
+w588     Delays l227 to next cycle, enables latch for l226
+w589     Delays l228 to next cycle, enables latch for l225
+w590     Delays l229 to next cycle, enables latch for l224
+w591     Delays l230 to next cycle, enables latch for l223
+w592     Set to copy plane A tile data being latched live (l246:l243,l226:l223) into a safe location (l258:l255,l235:l232)
+w594     Delays l247 to next cycle, enables latch for l246
+w595     Delays l248 to next cycle, enables latch for l245
+w596     Delays l249 to next cycle, enables latch for l244
+w597     Delays l250 to next cycle, enables latch for l243
 w599     Used to select source for w602~w605
+w600     Aligns signal to start latching 1st tile of plane A to hclk1
 w601     ??? (used as part of the expression in w606_t)
 w602     Plane A or B hflip flag (w599 = 0: plane A, 1: plane B)
 w603     Plane A or B palette bit 0 (w599 = 0: plane A, 1: plane B)
@@ -515,8 +526,11 @@ w607_m4     w607 value for mode 4
 w607_m5_1   w607 value for mode 5 (1st tile?)
 w607_m5_2   w607 value for mode 5 (2nd tile?)
 w608     (part of the expression for w609 to account for mode 4 and 5 differences)
-w610     ??? (latched on 1st dot, see w611 below one dot clock later)
-w611     ??? (copies l232..l235 to l237..l240, l260 to l265 when set)
+w609     Set when we'll need more plane A pixel data for output (see w610)
+w610     Set when we'll need more plane A pixel data for output (see w611 too)
+w611     Set to copy cached plane A tile data being (l258:l255,l235:l232) into working copy for output (l264:l261,l240:l237)
+w612     Forces high the PLA signal from w507/l133 if test reg 1[9] is set and /HL pin is *high*
+w613     Aligns signal to start latching 2nd tile of plane A to hclk1
 w614     Set 1 dot after w512 (via l159), after being manipulated by the test registers
 w615     Set to latch lower byte of plane A/B 1st tilemap fetch
 w616     Set to latch upper byte of plane A/B 1st tilemap fetch
@@ -530,14 +544,19 @@ w623     NOT column vscroll (i.e. mode 5 full vscroll or mode 4)
 w624     Set if H counter is multiple of 16px if full vscroll, or if offset +8 if column vscroll
 w625     Vscroll column to read from VSRAM
 w626     VSRAM addres to access (goes to l212)
+w631     Set to copy plane B tile data being latched live (l278:l275,l297:l294) into a safe location (l306:l303,l282:l279)
 w634     Plane A or B hflip flag (l311[3] = 0: plane A, 1: plane B)
 w635     Plane A or B palette bit 0 (l311[3] = 0: plane A, 1: plane B)
 w636     Plane A or B palette bit 1 (l311[3] = 0: plane A, 1: plane B)
 w637     Plane A or B priority (l311[3] = 0: plane A, 1: plane B)
-w640     [???] (set to start the sequence for w619..w622)
+w638     Forces high the PLA signal from w508/l140 if test reg 1[10] is set and /HL pin is *high*
+w639     Aligns signal to start latching 2nd tile of plane B to hclk1
+w640     Aligns signal to start latching 1st tile of plane B to hclk1
 w641     Which pixel of plane B tile to show? (0 to 7)
 w642     Lets you force a hscroll table fetch when reg_test1[7] == 1 and HL
 w643     Set to put hscroll fetch address on VRAM bus
+w644     Set when we'll need more plane B pixel data for output (see w645 too)
+w645     Set to copy cached plane B tile data being (l282:l279,l306:l303) into working copy for output (l290:l287,l310:l307)
 w646     Set if plane A is opaque
 w647     Plane B color index to show (to l318)
 w648     Set if plane B is opaque
@@ -1179,6 +1198,14 @@ l219     Plane A/B 1st tilemap fetch lower byte
 l220     Plane A/B 1st tilemap fetch upper byte
 l221     Plane A/B 2nd tilemap fetch lower byte
 l222     Plane A/B 2nd tilemap fetch upper byte
+l223     4th byte of 2nd tile of plane A (m5 pixels 4:5) as it's being latched from VRAM
+l224     3rd byte of 2nd tile of plane A (m5 pixels 6:7) as it's being latched from VRAM
+l225     2nd byte of 2nd tile of plane A (m5 pixels 0:1) as it's being latched from VRAM
+l226     1st byte of 2nd tile of plane A (m5 pixels 2:3) as it's being latched from VRAM
+l227     When to latch 1st byte of 2nd tile of plane A from VRAM (enables l226)
+l228     When to latch 2nd byte of 2nd tile of plane A from VRAM (enables l225)
+l229     When to latch 3rd byte of 2nd tile of plane A from VRAM (enables l224)
+l230     When to latch 4th byte of 2nd tile of plane A from VRAM (enables l223)
 l236     [???] Amount to shift plane to the right? (loaded with bits 3:0 of hscroll)
 l237     Plane B tile pixels 7:6
 l238     Plane B tile pixels 5:4
@@ -1186,6 +1213,14 @@ l239     Plane B tile pixels 3:2 (m5), plane A bitplane 3 (m4)
 l240     Plane B tile pixels 1:0 (m5), plane A bitplane 2 (m4)
 l241     [???] X offset within plane (A?) output? (loaded with l236 on w614; counts up every dot)
 l242     [???] (enables write to l236)
+l243     4th byte of 1st tile of plane A (m5 pixels 4:5) as it's being latched from VRAM
+l244     3rd byte of 1st tile of plane A (m5 pixels 6:7) as it's being latched from VRAM
+l245     2nd byte of 1st tile of plane A (m5 pixels 0:1) as it's being latched from VRAM
+l246     1st byte of 1st tile of plane A (m5 pixels 2:3) as it's being latched from VRAM
+l247     When to latch 1st byte of 1st tile of plane A from VRAM (enables l246)
+l248     When to latch 2nd byte of 1st tile of plane A from VRAM (enables l245)
+l249     When to latch 3rd byte of 1st tile of plane A from VRAM (enables l244)
+l250     When to latch 4th byte of 1st tile of plane A from VRAM (enables l243)
 l251     Set while fetching tilemap data (1st tile) bits 7:0 (see w615)
 l252     Set while fetching tilemap data (1st tile) bits 15:8 (see w616)
 l253     Set while fetching tilemap data (2nd tile) bits 7:0 (see w617)
@@ -1195,23 +1230,35 @@ l261     Plane A tile pixels 7:6
 l262     Plane A tile pixels 5:4
 l263     Plane A tile pixels 3:2 (m5), plane A bitplane 1 (m4)
 l264     Plane A tile pixels 1:0 (m5), plane A bitplane 0 (m4)
+l267     Used to delay signal for latch 2nd tile of plane A
+l268     Used to delay signal for latch 2nd tile of plane A
 l269     Plane A color index to show (from w607, to l270 (layer mux), introduces 1 dot of delay)
 l270     Plane A color index to show (from l269, to color bus mux, introduces another dot of delay)
 l271     Plane A color palette to show (from w604;w603, to l272)
 l272     Plane A color palette to show (from l271, to color bus mux)
 l273     Plane A priority to show (from w605, to l274 and mux block)
 l274     Plane A priority to show (from l273, to color bus mux)
-l275     Plane B 1st tile 4th byte latch (from VRAM, may be byteswapped?)
-l276     Plane B 1st tile 3rd byte latch (from VRAM, may be byteswapped?)
-l277     Plane B 1st tile 2nd byte latch (from VRAM, may be byteswapped?)
-l278     Plane B 1st tile 1st byte latch (from VRAM, may be byteswapped?)
+l275     4th byte of 1st tile of plane B (m5 pixels 4:5) as it's being latched from VRAM
+l276     3rd byte of 1st tile of plane B (m5 pixels 6:7) as it's being latched from VRAM
+l277     2nd byte of 1st tile of plane B (m5 pixels 0:1) as it's being latched from VRAM
+l278     1st byte of 1st tile of plane B (m5 pixels 2:3) as it's being latched from VRAM
+l283     When to latch 1st byte of 1st tile of plane B from VRAM (enables l278)
+l284     When to latch 2nd byte of 1st tile of plane B from VRAM (enables l277)
+l285     When to latch 3rd byte of 1st tile of plane B from VRAM (enables l276)
+l286     When to latch 4th byte of 1st tile of plane B from VRAM (enables l275)
 l291     [???] On w631, taken from fetching tilemap name: {pri:a,pri:b, pal:a[1],pal:b[1], pal:a[0],pal:b[0], hf:a,hf:b}
 l293     VRAM address bits 6:1 (used in VSRAM block)
-l294     Plane B 2nd tile 4th byte latch (from VRAM, may be byteswapped?)
-l295     Plane B 2nd tile 3rd byte latch (from VRAM, may be byteswapped?)
-l296     Plane B 2nd tile 2nd byte latch (from VRAM, may be byteswapped?)
-l297     Plane B 2nd tile 1st byte latch (from VRAM, may be byteswapped?)
+l294     4th byte of 2nd tile of plane B (m5 pixels 4:5) as it's being latched from VRAM
+l295     3rd byte of 2nd tile of plane B (m5 pixels 6:7) as it's being latched from VRAM
+l296     2nd byte of 2nd tile of plane B (m5 pixels 0:1) as it's being latched from VRAM
+l297     1st byte of 2nd tile of plane B (m5 pixels 2:3) as it's being latched from VRAM
+l298     When to latch 1st byte of 2nd tile of plane B from VRAM (enables l297)
+l299     When to latch 2nd byte of 2nd tile of plane B from VRAM (enables l296)
+l300     When to latch 3rd byte of 2nd tile of plane B from VRAM (enables l295)
+l301     When to latch 4th byte of 2nd tile of plane B from VRAM (enables l294)
 l311     [???] X offset within plane (B?) output? (loaded with same value as l236 but MSB inverted; counts up every dot)
+l312     Used to delay signal for latch 2nd tile of plane B
+l313     Used to delay signal for latch 2nd tile of plane B
 l314     (pipeline, goes to l315) Set to output hscroll address (via w643)
 l315     (pipeline, goes to l316)
 l316     Set to start fetching of hscroll table data (see l213)
