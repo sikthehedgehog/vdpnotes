@@ -851,25 +851,38 @@ w979     Line buffer write data priority (2nd, 4th, 6th, 8th pixels)
 w980     Line buffer write data palette (2nd, 4th, 6th, 8th pixels)
 w982     Line buffer write data priority (1st, 3rd, 5th, 7th pixels)
 w983     Line buffer write data palette (1st, 3rd, 5th, 7th pixels)
-w985     VRAM read enable (high logic)
+w985     VRAM read enable (high logic), goes to /OE1 (as low logic)
 w986     VRAM lower byte write enable (high logic), goes to /WE0 (as low logic)
 w987     VRAM upper byte write enable (high logic), goes to /WE1 (as low logic)
 w988     1 = assert VRAM CAS (/CAS1 goes low)
 w989     1 = assert VRAM RAS (/RAS1 goes low)
 w990     Control pin direction of RD and AD (0: output, 1: input, I think?)
 w991     VRAM write to lower byte (from w286, or l571 which is latched w286)
+w992     Pulse to write VRAM to either byte (derived from w1000>l570>l569, lasts 1 halfdot, high logic)
+w994     Set to latch enable l594 and l597 on next hclk2 (latched by l580 on hclk1)
+w995     Set to output l594 (VRAM data bits 7:0) to AD_o
+w996     Set to output l593 (VRAM address column) to AD_o
+w997     Set to output l592 (VRAM address row) to AD_o
 w998     Enable latching RD_i/AD_i in l598/l599
 w999     VRAM write to upper byte (from w288, or l585 which is latched w288)
+w1000    VRAM write to either byte (combined w991+w999, latched from w286+w288)
+w1001    Free VRAM slot (from l574+l590) or refresh slot (from w1008), starting 2 dots later
+w1002    Set to latch enable l592 and l593 (delays l116 until hclk2)
+w1003    Set to latch enable l594 and l597 (l591 selects source of data, 1=RD/AD, 0=VRAM data bus) (delays l580 until hclk2)
+w1005    Enable latching VRAM data in l596/l595 (delays l116 until hclk2)
 w1007    Alternate between /SE0 and /SE1 in 128k mode, or stick to /SE0 only when not 128k
 w1008    H Timing signal: refresh slot (l588 OR l589, introduces 2 dots of latency, pulse is 2 dots long)
 w1009    /YS signal (see w1082 too)
 w1010    Used for VRAM address computation (bit 1 in m5)
-w1011    Used for VRAM address computation (w1010 OR bit 9 in m4)
+w1011    Used for VRAM address computation (bit 1 in m5, bit 9 in m4)
 w1012    Physical VRAM address (upper half, latched into l592)
 w1013    VRAM address MSB to use
 w1014    Physical VRAM address (lower half, latched into l593)
-w1018    VRAM address bus output (connected to AD_o[7:0])
-w1019    VRAM data bus output (connected to RD_o[7:0])
+w1015    Chooses which byte to multiplex on AD_o[7:0] (via w1018)
+w1016    Mux that selects what will go into l594 (1=AD from l599, 0=VRAM data 7:0 from l595)
+w1017    Mux that selects what will go into l597 (1=RD from l598, 0=VRAM data 15:8 from l596)
+w1018    VRAM address bus output (connected to AD_o[7:0]), lets test register 0 bit 5 override it
+w1019    VRAM data bus output (connected to RD_o[7:0]), lets test register 0 bit 5 override it
 w1020    Set if sprite collision detected (any of w926~w933 set), goes to l600->t11
 w1021    Set on CRAM bus access
 w1022    [priority logic]  a_pri ?  s_pri : ~b_pri
@@ -1097,12 +1110,13 @@ l105     V counter
 l106     H counter
 l107     Vsync (for mode 5, delayed from l663 by 8 dots)
 l108     H Timing signal: refresh slot (from w476, introduces 1 dot of latency)
-l109     Free VRAM slot (CPU access allowed) (latched from w359)
+l109     Free VRAM slot (CPU access allowed) (latched from w359, 1 dot later)
 l110     H Timing signal: H counter = 0 (latched from w504, introduces 1 dot of latency)
 l111     H Timing signal: H position of middle of the scanline (1 dot wide, used for interlaced mode, from w503)
 l112     H Timing signal: H counter wraparound (from w490, introduces 1 dot of latency)
 l113     Used to do edge detection of l121
 l115     H Timing signal: increment V counter (from w502, turned high logic), latch window settings, hscroll in m4
+l116     Not sure how it works but seems to trigger the sequence to do a VRAM access on the random access port
 l117     H Timing signal: VSRAM read in full vscroll, when F flag is cleared (from w505), 1 dot later, inverted
 l118     H Timing signal: fetch plane A tilemap data (from w477), 1 dot later
 l119     H Timing signal: fetch plane B tilemap data (from w478), 1 dot later
@@ -1451,18 +1465,32 @@ l559     Sprite color palette to show (from w974, to color bus mux)
 l560     Sprite priority to show (from w973, to color bus mux)
 l561     Sprite color index to show (from l558, to color bus mux)
 l562     Stores w877 and delays it by 1 dot (to next DCLK negedge)
+l564     Part of the timing chain that controls VRAM bus output
+l565     Part of the timing chain that controls VRAM bus output
+l566     Part of the timing chain that controls VRAM bus output
+l567     Part of the timing chain that controls VRAM bus output
 l568     VRAM write to lower byte (from w991, delayed by one dot)
-l571     VRAM write to upper byte (latched from w286, goes to w991)
-l574     (use unknown?) Free VRAM slot (CPU access allowed) (latched from l109)
+l571     VRAM write to upper byte (latched from w286, goes to w991 and w1000)
+l574     Free VRAM slot (CPU access allowed) (latched from w359, 2 dots later, used in w1001)
+l575     w1001 (free VRAM or refresh slot) delayed further until the next hclk1 (used in w985 for /OE)
+l576     Part of the timing chain that controls VRAM bus output
+l577     Part of the timing chain that controls VRAM bus output
+l578     Part of the timing chain that controls VRAM bus output
+l579     Part of the timing chain that controls VRAM bus output
+l580     Set to latch enable l594 and l597 on hclk2 (l591 determines source of data, 1=RD/AD, 0=VRAM data bus)
 l583     Set to output the latched RD_i/AD_i on the VRAM data bus
 l584     VRAM write to upper byte (from w999, delayed by one dot)
-l585     VRAM write to lower byte (latched from w288, goes to w999)
+l585     VRAM write to lower byte (latched from w288, goes to w999 and w1000)
 l586     0: enable 1st VRAM serial bus (/SE0), 1: enable 2nd VRAM serial bus (/SE1)
 l587     H Timing signal: refresh slot (from w1008, introduces 3 dots of latency, pulse is 2 dots long)
 l588     H Timing signal: refresh slot (from w476->l108, introduces 2 dots of latency)
 l589     H Timing signal: refresh slot (from w476->l108->l588, introduces 3 dots of latency)
+l590     Free VRAM slot (CPU access allowed) (latched from w359, 3 dots later, used in w1001)
+l591     Select what will go into l597/l594 (0=RD/AD from l598/l599, 1=VRAM data bus from l596/l595)
 l592     Physical VRAM address (upper half, latched from w1012)
 l593     Physical VRAM address (lower half, latched from w1014)
+l594     One of the possible values to send to AD7:0 pins (see w1015)
+l597     Value to send to RD7:0 pins (if not overriden by test reg 0 bit 5)
 l600     Set sprite collision flag
 l601     CRAM write, upper byte (latched from w302)
 l602     CRAM write, lower byte (latched from w303)
