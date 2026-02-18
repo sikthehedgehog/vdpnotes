@@ -159,7 +159,7 @@ Trying to set vscroll within the 224-255 range is the same as setting it within 
 	+ Do *not* set this to 1 on a Mega Drive or it will crash immediately!
 	+ System C/C2 uses this to let the CPU access external CRAM.
 - Bits 5:4: determines how VRAM is used in a 128KB setup.
-	+ 0X: the full 128KB are available.
+	+ X0: the full 128KB are available.
 	+ 01: the first 64KB are available (VRAM address bit 16 is forced to 0).
 	+ 11: the last 64KB are available (VRAM address bit 16 is forced to 1).
 	+ Note that all this does is change VRAM address bit 16, all the other side effects apply as usual.
