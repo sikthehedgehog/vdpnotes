@@ -130,7 +130,7 @@ w171     Select low word for next command write?
 w174     Select low byte for next command write (SMS mode) (same as w170 but with RESET thrown in)
 w175     Select low word for next command write? (same as w171 but with RESET thrown in)
 w176     Select high word for next command write? (same as w155 but with RESET thrown in)
-w177     [w189 is involed somehow] Not CRAM nor VSRAM selected for reading (from w201 and w202)
+w177     [w189 is involed somehow] Not CRAM nor VSRAM selected for reading (from w201 and w202) (goes to l29->l30->w1004)
 w178     CRAM read enable (goes to l623_1 -> l623_2 -> l623_3)
 w182     CD5 flag (actually combinatorial and not a latch)
 w183     End of DATA/CTRL access? detect, set 4.0 DCLK later, reset 4.5 DCLK later
@@ -869,6 +869,7 @@ w1000    VRAM write to either byte (combined w991+w999, latched from w286+w288)
 w1001    Free VRAM slot (from l574+l590) or refresh slot (from w1008), starting 2 dots later
 w1002    Set to latch enable l592 and l593 (delays l116 until hclk2)
 w1003    Set to latch enable l594 and l597 (l591 selects source of data, 1=RD/AD, 0=VRAM data bus) (delays l580 until hclk2)
+w1004    Set to output the latched RD_i/AD_i on the VRAM data bus (goes to l583 which then enables it)
 w1005    Enable latching VRAM data in l596/l595 (delays l116 until hclk2)
 w1007    Alternate between /SE0 and /SE1 in 128k mode, or stick to /SE0 only when not 128k
 w1008    H Timing signal: refresh slot (l588 OR l589, introduces 2 dots of latency, pulse is 2 dots long)
