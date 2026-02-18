@@ -163,6 +163,7 @@ Trying to set vscroll within the 224-255 range is the same as setting it within 
 	+ 01: the first 64KB are available (VRAM address bit 16 is forced to 0).
 	+ 11: the last 64KB are available (VRAM address bit 16 is forced to 1).
 	+ Note that all this does is change VRAM address bit 16, all the other side effects apply as usual.
+	+ The internal logical VRAM address is *not* affected, only the encoded one that goes to the `AD7:0` pins. This matters for the sprite cache checks.
 - Bit 3 ("IE2"): when 1, enable external interrupt (falling edge on /HL pin).
 - Bit 2 ("VSCR"): vscroll mode in mode 5.
 	+ 0: full vscroll. Column 0's value is used for the entire plane. VSRAM is latched once at the beginning of the scanline.
