@@ -136,7 +136,7 @@ Background color is always taken from palette 1.
 
 ### In mode 5:
 
-- Bit 7: when test register 0 bit 7 = 1, this is output as the highlight flag.
+- Bit 7: when test register 0 bit 6 = 1, this is output as the highlight flag.
 - Bit 6: when test register 0 bit 6 = 1, this is output as the shadow flag.
 - Bits 5:4 ("CPT1:0"): background color palette.
 - Bits 3:0 ("COL3:0"): background color index.
