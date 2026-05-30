@@ -20,8 +20,9 @@ w47      CPU interrupt acknowledge (Z80), also expose IRQ number on the bus
 w48      CPU interrupt acknowledge in mode 5
 w49      Clear pending interrupts (from l9, from w48)
 w50      Reset OR read enable CTRL
-w53      Clear F flag in mode 4 on status read
+w53      Clear F flag (pending interrupts) in mode 4 on status read
 w54      Clear external interrupt pending
+w55      Clear hblank interrupt pending
 w56      Clear vblank interrupt pending (F flag)
 w57      Set to trigger hblank interrupt
 w58      Set to trigger external interrupt
@@ -81,7 +82,7 @@ w112     Read enable for DATA/CTRL (SMS mode)
 w113     Read enable for DATA/CTRL
 w114     Read enable for CTRL
 w117     /DTACK (but high logic, unlike the pin)
-w120     Set F flag, also sets whatever is t12 (see w121)
+w120     Set F flag (vblank interrupt pending), also sets whatever is t12 (see w121)
 w121     ??? (resets t12)
 w122     Fire the interrupt (be more specific? high or low logic?) (68k=t12, Z80=w9)
 w123     V counter latch bottom bit
@@ -1028,6 +1029,7 @@ l11      End of interrupt acknowledge (from l10)
 l12      [has another use with w51] Used to reset t6 two dots after it's set (t6 -> l12 -> l13)
 l13      [has another use with w52] Used to reset t6 two dots after it's set (t6 -> l12 -> l13)
 l14      Clear sprite overflow and collision flags on vblank (F flag too if mode 4)
+l15      Set hblank interrupt pending
 l18      Select between DATA and CTRL port for writes (latched when NOT writing the ports)
 l19      Select between DATA and CTRL port for reads (latched when NOT reading the ports, used by w143)
 l21      CPU access to DATA/CTRL detected, from 2.5 to 4.5 DCLK later
