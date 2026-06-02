@@ -19,7 +19,9 @@ w46      CPU interrupt acknowledge
 w47      CPU interrupt acknowledge (Z80), also expose IRQ number on the bus
 w48      CPU interrupt acknowledge in mode 5
 w49      Clear pending interrupts (from l9, from w48)
-w50      Reset OR read enable CTRL
+w50      Reset OR read enable CTRL (sets t6 which clears some status flags later)
+w51      Used to clear some flags when reading the status port (see t6,l12,l13)
+w52      Used to clear some flags when reading the status port (see t6,l12,l13)
 w53      Clear F flag (pending interrupts) in mode 4 on status read
 w54      Clear external interrupt pending
 w55      Clear hblank interrupt pending
@@ -82,8 +84,9 @@ w112     Read enable for DATA/CTRL (SMS mode)
 w113     Read enable for DATA/CTRL
 w114     Read enable for CTRL
 w117     /DTACK (but high logic, unlike the pin)
-w120     Set F flag (vblank interrupt pending), also sets whatever is t12 (see w121)
-w121     ??? (resets t12)
+w119     Select point where vblank interrupt fires (l110 if MD mode, l115 if SMS mode)
+w120     Set F flag (vblank interrupt pending), also sets Z80 IRQ in MD mode (also see w121)
+w121     Deasserts Z80 IRQ in MD mode (resets t12)
 w122     Fire the interrupt (be more specific? high or low logic?) (68k=t12, Z80=w9)
 w123     V counter latch bottom bit
 w124     68000 CPU access detected
@@ -292,7 +295,7 @@ w356     reg_test1[6:4] == 3'h1 OR 3'h0 and time for plane A tilemap fetch
 w357     reg_test1[6:4] == 3'h1 (used by w356)
 w358     (part of the expression in w359)
 w359     Free VRAM slot (CPU access allowed) (latched in l109)
-w360     Set if hpos = 258+1 (H32) or 322+1 (H40), 1 dot later than when F flag is cleared (from l117, undoes invert)
+w360     Where rendering starts for a new line (from l117, undoes invert)
 w361     Do H counter wraparound
 w362     Increment H counter by 1px (when test register #1 bit 3 is not set)
 w363     Increment H counter by 1px (including also test register)
@@ -382,10 +385,12 @@ w454     Used by w451 and w456, external sync enabled and H counter = 0 on the l
 w455     Toggle even/odd flag (external sync disabled and H counter = 0 on the line vblank begins)
 w456     Set even/odd flag (force odd flag, goes to l168 instead of directly to w446)
 w457     Start of vblank (opposite of w469, latched from l170), also latches interlaced mode
-w458     Reset OR start of vblank
+w458     Clears "in viewport" flag for vertical axis (t38) (logic: reset OR start of vblank)
 w459     Used by w454 and w455, H counter = 0 on the line vblank begins (delayed by 1 dot)
 w460     External sync and w464 rising edge (1 dot latency)
+w461     (resets t39, involves external sync via w460)
 w462     Combines reset and l167 (start of top border / end of vblank)
+w465     (resets t39, involves external sync via w465)
 w466     Opposite of w439 (1 = active scan, 0 = passive scan), used for PLA conditions
 w467     V Timing signal: V counter wraparound point (goes to l174)
 w468     V Timing signal: (low logic) end of vblank / start of vertical visible area
@@ -424,7 +429,7 @@ w501     H Timing signal: end of long hsync (early 4px in m4, 11px in m5)
 w502     H Timing signal: increment or warparound V counter (low logic)
 w503     H Timing signal: H position of middle of the scanline (1 dot wide, used for interlaced mode, goes to l111)
 w504     H Timing signal: H counter = 0
-w505     H Timing signal: VSRAM read in full vscroll (low logic), when F flag is cleared in SMS mode
+w505     H Timing signal: where rendering starts for a new line (low logic)
 w506     H Timing signal: VSRAM read in column vscroll (H counter is multiple of 8px (0, 8, 16, 24...504))
 w507     H Timing signal: latch tile data for plane A (H counter multiple of 8px +7 (mode 4), multiple of 16px +7 (mode 5))
 w508     H Timing signal: latch tile data for plane B (H counter multiple of 16px +15)
@@ -1011,9 +1016,9 @@ dff26_l2 ??? (bit 3 of some value, incremented by ~t3, reset by w41)
 dff27_l2 ??? (bit 4 of some value, incremented by ~t3, reset by w41)
 dff28_l2 ??? (bit 5 of some value, incremented by ~t3, reset by w41)
 dff29_l2 ??? (bit 6 of some value, incremented by ~t3, reset by w41)
-dff30_l2 Pending external interrupt? (set by w58, reset by w49)
-dff31_l2 Pending hblank interrupt? (set by w57, reset by w49)
-dff32_l2 Pending vblank interrupt? (set by w60, reset by w49)
+dff30_l2 Set to acknowledge external IRQ in m5 (set by w58, reset by w49)
+dff31_l2 Set to acknowledge hblank IRQ in m5 (set by w57, reset by w49)
+dff32_l2 Set to acknowledge vblank IRQ in m5 (set by w60, reset by w49)
 
 l1       H Timing signal: refresh slot (from l108, introduces 2 dots of latency)
 l2       H Timing signal: refresh slot (from l1, introduces 3 dots of latency)
@@ -1026,8 +1031,8 @@ l8       (delays l7 by half a dot, uninverted)
 l9       End of interrupt acknowledge (from w48, to l10)
 l10      End of interrupt acknowledge (from l9, to l11)
 l11      End of interrupt acknowledge (from l10)
-l12      [has another use with w51] Used to reset t6 two dots after it's set (t6 -> l12 -> l13)
-l13      [has another use with w52] Used to reset t6 two dots after it's set (t6 -> l12 -> l13)
+l12      Used to clear some flags when reading status port, resets t6 two dots after it's set (t6 -> l12 -> l13)
+l13      Used to clear some flags when reading status port, resets t6 two dots after it's set (t6 -> l12 -> l13)
 l14      Clear sprite overflow and collision flags on vblank (F flag too if mode 4)
 l15      Set hblank interrupt pending
 l18      Select between DATA and CTRL port for writes (latched when NOT writing the ports)
@@ -1120,7 +1125,7 @@ l112     H Timing signal: H counter wraparound (from w490, introduces 1 dot of l
 l113     Used to do edge detection of l121
 l115     H Timing signal: increment V counter (from w502, turned high logic), latch window settings, hscroll in m4
 l116     Not sure how it works but seems to trigger the sequence to do a VRAM access on the random access port
-l117     H Timing signal: VSRAM read in full vscroll, when F flag is cleared (from w505), 1 dot later, inverted
+l117     H Timing signal: where rendering starts for a new line (from w505), 1 dot later, low logic
 l118     H Timing signal: fetch plane A tilemap data (from w477), 1 dot later
 l119     H Timing signal: fetch plane B tilemap data (from w478), 1 dot later
 l120     CSYNC pin input
@@ -1547,13 +1552,14 @@ t1       Set when writing reg $17 with DMD1=0, clear when CPU bus grant (or rese
 t2       "In DMA copy/fill" flag
 t3       BGACK (low logic)
 t4       "In DMA transfer" flag
-t5       Set when interrupt acknowledge arrives
+t5       Set when interrupt acknowledge arrives, used to set w48 for one cycle
+t6       Used to clear some flags when reading the status port (SOVR, C, also F if in mode 4)
 t7       Hblank interrupt pending
 t8       External interrupt pending
 t9       Vblank interrupt pending (status port F bit)
 t10      Status port SOVR bit
 t11      Status port C bit
-t12      Set to fire the interrupt in MD mode (be more specific?)
+t12      Set to fire Z80 interrupt in MD mode (I think?)
 t13      CPU access to DATA/CTRL detected
 t14      Seems to be set while VDP is waiting for data from VRAM/CRAM/VSRAM to be latched on a read
 t15      Which command byte to write next in SMS mode? (t16 gated by w154?)
