@@ -37,7 +37,7 @@ w64      Assert BGACK (high logic)
 w65      Swap status port bits 1:0 with 9:8 (req: SMS mode, mode 5, mirror status port, wtf?)
 w66      Set sprite overflow flag
 w67      Set to count down the counter for next hblank interrupt
-w68      (not sure, but also part of the logic to load the hblank int line counter)
+w68      (not sure, but also part of the logic to load the hblank int line counter) (low logic)
 w69      Set to load line counter for next hblank interrupt
 w70      68k within VDP address range (address must be 110xx000 xxxxxxxx 000xxxxx)
 w71      Output extra V and H counter bits over CPU data bus (test feature, SMS mode only)
@@ -1581,6 +1581,8 @@ t36      1st equalization pulse range? (set 3 for lines before vsync)
 t37      disable color output (vertical)
 t38      in viewport area? (vertical)
 t43      Write enable for PSG (low logic, reset by PSG write, set by l635 when done)
+
+cnt1_of        Hblank IRQ line counter
 
 cpu_sel        1 = 68000, 0 = Z80
 
