@@ -8,10 +8,19 @@ w8       Set while in DMA transfer (after it has been going for at least 1 dot)
 w9       Set when any interrupt pending
 w11      IRQ number to assert (bit 1)
 w12      IRQ number to assert (bit 2)
-w13      not refresh slot and DMA transfer from RAM
+w13      not refresh slot 1 dot ago and DMA transfer from RAM
+w14      [???] Not sure but is used to compute /RAS0 when reg $0B bit 6 is 1
+w16      [???] Not sure but is used to compute /RAS0 when reg $0B bit 6 is 0 and for DRAM mux
 w17      l2 & l8 (unused, not connected anywhere)
+w18      [?] Seems timed to writes during DMA from ROM to RAM
+w20      [???] Used for /RAS0 (via w21)
+w21      [???] Used for /RAS0
+w22      [???] Used for /RAS0
+w34      Whatever w40 is AND /AS asserted (68000) AND address >= $E00000 AND no IRQ ack
 w35      No CPU interrupt acknowledge?
+w36      Whatever w40 is AND /AS asserted in 68k mode
 w37      No CPU address strobe (68000)
+w38      Resets dff13_l2 when VDP reset or dff12_l2=1
 w43      Set when counter dff29..23_l2 == 0x7F (fed to dff14_l2)
 w44      Set when counter dff29..23_l2 >= 0x70 (fed to dff13_l2, dff15_l2)
 w45      CPU interrupt acknowledge (68000)
@@ -70,9 +79,9 @@ w97      Read enable for test port $7
 w98      Write enable for test port $8
 w99      Read enable for test port $8
 w100     Write enable for test port $F
-w101     DRAM row and column mux select (passed to w103)
+w101     DRAM row and column mux select (passed to w103 and w104)
 w103     RA output, color bus vs. DRAM address mux (involves reg $0B bit 7 and w101)
-w104     DRAM ASEL signal (involves reg $0B bit 7)
+w104     DRAM ASEL signal (involves reg $0B bit 7, goes to w102)
 w105     ??? (controlled by debug reg $00 bit 0, involves color)
 w106     Interlaced mode 2 enable (high resolution)
 w107     V28 enable
@@ -113,7 +122,7 @@ w146     Part of /DTACK logic (all this goes to w117 via w125)
 w147     (68000?) CPU strobe (either upper or lower)
 w149     DATA write detect used for FIFO writes (aligned to w154)
 w150     DATA write detect used for FIFO writes (aligned to w153)
-w151     (low logic) VRAM data output strobe
+w151     CPU data output enable
 w152     Any port read (DATA/CTRL, HV, or test register)
 w153     DATA/CTRL access detect, set 2.0 DCLK later, reset 3.0 DCLK later / DATA/CTRL access strobe for w150
 w154     DATA/CTRL access detect, set 2.0 DCLK later, reset 2.5 DCLK later / DATA/CTRL access strobe for w149
@@ -131,25 +140,31 @@ w168     Write command bits 23:16
 w169     Write enable for DATA
 w170     Select low byte for next command write (SMS mode) (same as w174 but before RESET is added)
 w171     Select low word for next command write?
+w172     See w154, when ready to write low byte of command in SMS mode (OR also VDP reset); resets t15
+w173     See w154, when ready to write high byte of command in SMS mode; sets t16
 w174     Select low byte for next command write (SMS mode) (same as w170 but with RESET thrown in)
 w175     Select low word for next command write? (same as w171 but with RESET thrown in)
 w176     Select high word for next command write? (same as w155 but with RESET thrown in)
 w177     [w189 is involed somehow] Not CRAM nor VSRAM selected for reading (from w201 and w202) (goes to l29->l30->w1004)
 w178     CRAM read enable (goes to l623_1 -> l623_2 -> l623_3)
+w181     Update reg_data_l2 when w181 == 0
 w182     CD5 flag (actually combinatorial and not a latch)
 w183     End of DATA/CTRL access? detect, set 4.0 DCLK later, reset 4.5 DCLK later
 w184     DATA/CTRL access detect, set 2.5 DCLK later, reset 3.5 DCLK later (used by w193 when detecting register writes)
 w185     Selects between current (1) or autoincremented (0) address
 w186     (part of the logic for w187 and w188, latched through l27)
-w187     (not sure but seems to be when writes trigger inside DMA copy?)
+w187     (not sure but seems to be when writes trigger inside DMA copy?) (advances DMA source and length via w250)
 w188     (not sure but seems to be when writes trigger outside DMA copy?)
+w190     ??? (l28 and *not* DMA copy)
 w191     Put current command address on VRAM bus (DMA destination address, I guess)
 w192     reg_code[1:0] != 2'h2 (not a register write)
 w193     Detected a register write? (pipelines to l31..l34,w205)
+w194     ??? (something to do with CPU access timing, subexpression of w200)
 w195     Put current DMA source address on VRAM bus
 w197     Resets t27 (used during DMA end?)
 w198     Sets t27 (used during DMA start?)
 w199     DMA copy in progress and CD4 set
+w200     ??? (something to do with VRAM read? CD4 == 0 and CD1:0 == 00, subexpression of w198)
 w201     [not sure how w189 is involved but] Selected VSRAM for reading (goes to l206)
 w202     [not sure how w189 is involved but] Selected CRAM for reading
 w204     Reset command bits 23:16 (triggered by reset or mode 4)
@@ -190,8 +205,8 @@ w246     DMA in progress & reg_dmd == 2'h1 (DMA transfer from RAM)
 w247     DMA in progress & reg_dmd == 2'h0 (DMA transfer from ROM)
 w248     DMA in progress & reg_dmd == 2'h2 (DMA fill)
 w249     Set if data write coming from DMA? (guessing from context, merged with VDP data write in w304)
-w250     Increment DMA source address
-w251     Decrement DMA length (second byte)
+w250     Increment DMA source and decrement length by 1
+w251     Decrement DMA length (high byte)
 w252     Status port FULL bit (0 = FIFO has room, 1 = FIFO is full)
 w254     Is FIFO still empty?
 w255     Increment DMA source address (second byte)
@@ -203,7 +218,7 @@ w260     w256 when FIFO index == 2, sends entry's address (l39) to VRAM address 
 w262     [UNUSED!!] DMA fill and w300
 w263     Set when DMA fill and FIFO empty
 w264     Increment FIFO write index; data write (through DATA port access or DMA transfer)
-w267     DMA in progress & reg_dmd[1] == 0 (DMA transfer from ROM or RAM)
+w267     CPU address output enable (DMA in progress & reg_dmd[1] == 0) (DMA transfer from ROM or RAM)
 w268     Set to output data from FIFO to data bus
 w269     Time to flush FIFO entry (free access slot and FIFO not empty) (to l49)
 w270     Clears t28 when DMA is over
@@ -262,8 +277,8 @@ w323     VSRAM write, upper byte (goes to l207)
 w324     VSRAM write, lower byte (goes to l208)
 w325     CD2:1 == 00 (VRAM select) (either live or FIFO, depending on l50)
 w326     Sends FIFO entry #0 to VRAM data bus
-w328     Sends FIFO entry #2 to VRAM data bus
-w327     Sends FIFO entry #1 to VRAM data bus
+w327     Sends FIFO entry #2 to VRAM data bus
+w328     Sends FIFO entry #1 to VRAM data bus
 w329     Sends FIFO entry #3 to VRAM data bus
 w330     NOT (68000, 8-bit VRAM write, byte-sized FIFO entry)
 w331     Used to select what will go in the low byte of the VRAM write
@@ -334,7 +349,7 @@ w399     Timing for half hsync pulses? (~w398 AND mid-line hsync pulses)
 w400     Pre-vsync or post-vsync in mode 5 and mid-line hsync pulses?
 w401     Start of hblank OR reset
 w402     Passes the PLA signal from w508/l140 only if test reg 1[6:4] == 3'b000
-w403     ??? (just merges w410 with its delayed signal)
+w403     ??? (just merges w410 with its delayed signal, latched in l132 for use a dot later)
 w404     Hsync output gated by hsync dir bit (comes from w396, goes to l136)
 w405     Timing for full hsync pulses? (w398 AND normal hsync pulses)
 w406     (same as w405)
@@ -865,6 +880,7 @@ w989     1 = assert VRAM RAS (/RAS1 goes low)
 w990     Control pin direction of RD and AD (0: output, 1: input, I think?)
 w991     VRAM write to lower byte (from w286, or l571 which is latched w286)
 w992     Pulse to write VRAM to either byte (derived from w1000>l570>l569, lasts 1 halfdot, high logic)
+w993     Part of the expression in w985 used to gate /OE1 when a free VRAM slot begins
 w994     Set to latch enable l594 and l597 on next hclk2 (latched by l580 on hclk1)
 w995     Set to output l594 (VRAM data bits 7:0) to AD_o
 w996     Set to output l593 (VRAM address column) to AD_o
@@ -872,7 +888,7 @@ w997     Set to output l592 (VRAM address row) to AD_o
 w998     Enable latching RD_i/AD_i in l598/l599
 w999     VRAM write to upper byte (from w288, or l585 which is latched w288)
 w1000    VRAM write to either byte (combined w991+w999, latched from w286+w288)
-w1001    Free VRAM slot (from l574+l590) or refresh slot (from w1008), starting 2 dots later
+w1001    Free VRAM slot (from l574+l590) or refresh slot (from w1008), starting 2 dots later, 2 dots long
 w1002    Set to latch enable l592 and l593 (delays l116 until hclk2)
 w1003    Set to latch enable l594 and l597 (l591 selects source of data, 1=RD/AD, 0=VRAM data bus) (delays l580 until hclk2)
 w1004    Set to output the latched RD_i/AD_i on the VRAM data bus (goes to l583 which then enables it)
@@ -1008,6 +1024,7 @@ prescaler_dff13   Used for MCLK/12 generation
 prescaler_dff14   Used for MCLK/12 generation
 
 dff3_l2  DMA in progress
+dff12_l2 Used to reset dff13_l2 (via w38), updated when 68k removes address from bus
 dff22_l2 DMA transfer in progress (latched from t4)
 dff23_l2 ??? (bit 0 of some value, incremented by ~t3, reset by w41)
 dff24_l2 ??? (bit 1 of some value, incremented by ~t3, reset by w41)
@@ -1029,8 +1046,8 @@ l6       ??? (affects output of MSB of source address in DMA transfer from ROM)
 l7       (delays l6 by half a dot, inverted)
 l8       (delays l7 by half a dot, uninverted)
 l9       End of interrupt acknowledge (from w48, to l10)
-l10      End of interrupt acknowledge (from l9, to l11)
-l11      End of interrupt acknowledge (from l10)
+l10      End of interrupt acknowledge (from l9, to l11) (+0.5 cycles from l9)
+l11      End of interrupt acknowledge (from l10) (+1.0 cycles from l9)
 l12      Used to clear some flags when reading status port, resets t6 two dots after it's set (t6 -> l12 -> l13)
 l13      Used to clear some flags when reading status port, resets t6 two dots after it's set (t6 -> l12 -> l13)
 l14      Clear sprite overflow and collision flags on vblank (F flag too if mode 4)
@@ -1054,6 +1071,7 @@ l37      FIFO address entry #0 (17-bit)
 l38      FIFO address entry #3 (17-bit)
 l39      FIFO address entry #2 (17-bit)
 l40      (used to mask w18's first DCLK cycle for w249)
+l41      Set to update DMA source and length (via w250) during ROM transfer? (from w18, aligned to hclk2)
 l42      Set when trying to write into FIFO (from w264, used to determine FIFO full flag in w252)
 l43      Set when FIFO is full (from w252, used to determine FIFO full flag in w252)
 l44      Time to flush FIFO entry (free access slot and FIFO not empty) (delayed 2 dots from w269)
@@ -1062,7 +1080,7 @@ l46      Status port EMPT bit (0 = FIFO has data, 1 = FIFO is empty)
 l47      ??? (stores VRAM address bit 0)
 l48      Finish DMA transfer (from w244, to w4)
 l49      Time to flush FIFO entry (free access slot and FIFO not empty) (delayed 1 dot from w269)
-l50      Selects between live flags and FIFO flags (used during DMA fill) (from w272)
+l50      Selects between live flags and FIFO flags (used during DMA fill) (from w272) (also steps DMA source and length via w250)
 l51      FIFO write index (2-bit, incremented by w264)
 l52      FIFO read index (bit -1, yes "half" an entry)
 l53      FIFO read index (bit 0)
@@ -1479,7 +1497,9 @@ l566     Part of the timing chain that controls VRAM bus output
 l567     Part of the timing chain that controls VRAM bus output
 l568     VRAM write to lower byte (from w991, delayed by one dot)
 l571     VRAM write to upper byte (latched from w286, goes to w991 and w1000)
-l574     Free VRAM slot (CPU access allowed) (latched from w359, 2 dots later, used in w1001)
+l572     Free VRAM slot (CPU access allowed) (latched from w359->l109->l574->l590->l573, 4 dots later, used in w993)
+l573     Free VRAM slot (CPU access allowed) (latched from w359->l109->l574->l590, 3.5 dots later, used in w993)
+l574     Free VRAM slot (CPU access allowed) (latched from w359->l109, 2 dots later, used in w1001)
 l575     w1001 (free VRAM or refresh slot) delayed further until the next hclk1 (used in w985 for /OE)
 l576     Part of the timing chain that controls VRAM bus output
 l577     Part of the timing chain that controls VRAM bus output
@@ -1493,7 +1513,7 @@ l586     0: enable 1st VRAM serial bus (/SE0), 1: enable 2nd VRAM serial bus (/S
 l587     H Timing signal: refresh slot (from w1008, introduces 3 dots of latency, pulse is 2 dots long)
 l588     H Timing signal: refresh slot (from w476->l108, introduces 2 dots of latency)
 l589     H Timing signal: refresh slot (from w476->l108->l588, introduces 3 dots of latency)
-l590     Free VRAM slot (CPU access allowed) (latched from w359, 3 dots later, used in w1001)
+l590     Free VRAM slot (CPU access allowed) (latched from w359->l109->l574, 3 dots later, used in w1001)
 l591     Select what will go into l597/l594 (0=RD/AD from l598/l599, 1=VRAM data bus from l596/l595)
 l592     Physical VRAM address (upper half, latched from w1012)
 l593     Physical VRAM address (lower half, latched from w1014)
@@ -1650,6 +1670,7 @@ reg_col_b7     Reg 07:7
 
 reg_inc        Reg 0F = autoincrement
 reg_lg         Reg 13/14 = DMA length
+reg_lg_of      (carry from reg_lg[7] to reg_lg[8])
 reg_sa_low     Reg 16/15 = DMA source address low
 reg_sa_high    Reg 17:5/0 = DMA source address high
 reg_dmd        Reg 17:7/6 = DMA type
@@ -1669,6 +1690,10 @@ unk_data       Data to write to VRAM/CRAM/VSRAM (from the FIFO, goes to l104)
 r_col          Checks for each possible red level, before S/H
 g_col          Checks for each possible green level, before S/H
 b_col          Checks for each possible blue level, before S/H
+
+io_address_val    Internal CPU address bus
+io_address        CPU address bits 22:1
+io_address_22o    Output CPU address bit 23
 
 
 * Register write enables at w210..w233 (not in order, see below)

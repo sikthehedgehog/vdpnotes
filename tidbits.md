@@ -7,6 +7,8 @@
 ## VRAM
 
 - There's no centralized way to access the VRAM bus, everything that needs it puts their address directly on it and the VDP relies on its timing signals to coordinate who has access to the bus.
+- When writing to VRAM, the data is output directly from the FIFO latches; however when writing to CRAM or VSRAM the data goes through a latch. It's even more confusing, in that the low byte goes through a shared latch (`l104`), while the required bits from the high byte have separate latches for each (`l620` for CRAM, `l182` for VSRAM).
+	+ One side effect of this is that DMA copy and fill don't work with CRAM and VSRAM, since those DMA modes by-pass the FIFO but CRAM/VSRAM expect their data to come directly from the FIFO.
 - 16-bit data seems to be stored little endian internally. VDP has to fake having a big endian interface in mode 5 to prevent confusion when using the 68000.
 - With an 8-bit bus (mode 4 and mode 5 64KB), `/SE0` is always asserted. With a 16-bit bus (mode 5 128KB), it constantly alternates between `/SE0` and `/SE1`. This lets the VDP share the same 8-bit port to read data from both VRAM halves.
     + (`/SE0` and `/SE1` are the two VRAM selects, for context)

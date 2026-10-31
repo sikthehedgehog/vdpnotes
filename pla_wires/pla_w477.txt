@@ -1,4 +1,5 @@
-// Plane A tilemap fetches
+// Plane A tilemap fetches (mode 5)
+// Even plane A tilemap fetches (mode 4)
 
 	assign w477 = pla_hcnt1[50] | pla_hcnt1[57] | pla_hcnt1[58] | pla_hcnt1[59];
 
