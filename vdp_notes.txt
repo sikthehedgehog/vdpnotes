@@ -16,6 +16,7 @@ w18      [?] Seems timed to writes during DMA from ROM to RAM
 w20      [???] Used for /RAS0 (via w21)
 w21      [???] Used for /RAS0
 w22      [???] Used for /RAS0
+w25      Set when cpu_rd has been set for at least 2 ZCLK cycles, unset when it unsets immediately
 w34      Whatever w40 is AND /AS asserted (68000) AND address >= $E00000 AND no IRQ ack
 w35      No CPU interrupt acknowledge?
 w36      Whatever w40 is AND /AS asserted in 68k mode
@@ -889,10 +890,11 @@ w998     Enable latching RD_i/AD_i in l598/l599
 w999     VRAM write to upper byte (from w288, or l585 which is latched w288)
 w1000    VRAM write to either byte (combined w991+w999, latched from w286+w288)
 w1001    Free VRAM slot (from l574+l590) or refresh slot (from w1008), starting 2 dots later, 2 dots long
-w1002    Set to latch enable l592 and l593 (delays l116 until hclk2)
+w1002    Set to latch enable VRAM row and column in l592 and l593 (delays l116 until hclk2)
 w1003    Set to latch enable l594 and l597 (l591 selects source of data, 1=RD/AD, 0=VRAM data bus) (delays l580 until hclk2)
 w1004    Set to output the latched RD_i/AD_i on the VRAM data bus (goes to l583 which then enables it)
 w1005    Enable latching VRAM data in l596/l595 (delays l116 until hclk2)
+w1006    VRAM serial clock (inverted), copied from clk1, but skips every other DCLK cycle in 128k mode
 w1007    Alternate between /SE0 and /SE1 in 128k mode, or stick to /SE0 only when not 128k
 w1008    H Timing signal: refresh slot (l588 OR l589, introduces 2 dots of latency, pulse is 2 dots long)
 w1009    /YS signal (see w1082 too)
@@ -957,9 +959,10 @@ w1067    Shadow flag (goes to w1068 to merge with l618)
 w1068    Shadow flag + in viewport (latched into l608, used 4 dots later in l629)
 w1069    Allow background color bit 6 to override shadow flag when test reg 0 bit 6 is set
 w1070    Allow background color bit 7 to override highlight flag when test reg 0 bit 6 is set
+w1071    NOT (show sprite plane AND reg $0C bit 4 is set) (from l603, to l613)
 w1072    CRAM CPU access in mode 5
 w1073    CRAM CPU access in mode 4
-w1074    ??? (involves SPA/B)
+w1074    NOT (w1082 OR (inverted SPA/B, if SPA/B is an input))
 w1075    Set when going to output viewport pixels? (selects mode 4 or mode 5 timing, from 389 and l616)
 w1076    CRAM address to access (goes to l617)
 w1077    Set if output color is transparent, used for computing /YS (latched in l619)
@@ -967,7 +970,7 @@ w1078    CRAM write: data for "red" bits (internal bits 2:0)
 w1079    CRAM write: data for "green" bits (internal bits 5:3)
 w1080    Used to time CRAM read output (limits l623_3 to hclk1)
 w1081    Enable color output on RGB pins (goes to l624)
-w1082    Set when displaying transparent color (ignoring SPA/B)
+w1082    Set when displaying transparent color (before SPA/B) (only used in SPA/B logic)
 w1083    Red color bit 1 (mux for m4/m5)
 w1084    Red color bit 2 (mux for m4/m5)
 w1085    Green color bit 1 (mux for m4/m5)
@@ -1003,12 +1006,15 @@ w1139    Set when writing to PSG square channel #3 volume
 w1140    Set when writing to PSG square channel #1 frequency
 w1141    Set when writing to PSG noise channel volume
 w1142    Set when writing to PSG noise channel type/pitch
+w1153    68000 read (any size) and address < $E00000 and no CPU ack (w35)?
 
 mclk_clk1         MCLK/4 (50% cycle duty, --__ pattern)
 mclk_clk2         MCLK/5 (60% cycle duty, ---__ pattern)
 mclk_clk3         MCLK/7 (4/7 cycle duty, ----___ pattern)
 mclk_clk4         MCLK/12 (50% cycle duty, ------______ pattern)
 mclk_clk5         MCLK/15
+cpu_clk0          ZCLK
+cpu_clk1          VCLK
 
 prescaler_dff3    Used for MCLK/4 generation
 prescaler_dff4    Used for MCLK/4 generation
@@ -1052,6 +1058,7 @@ l12      Used to clear some flags when reading status port, resets t6 two dots a
 l13      Used to clear some flags when reading status port, resets t6 two dots after it's set (t6 -> l12 -> l13)
 l14      Clear sprite overflow and collision flags on vblank (F flag too if mode 4)
 l15      Set hblank interrupt pending
+l17      Delays cpu_rd by 1 ZCLK cycle
 l18      Select between DATA and CTRL port for writes (latched when NOT writing the ports)
 l19      Select between DATA and CTRL port for reads (latched when NOT reading the ports, used by w143)
 l21      CPU access to DATA/CTRL detected, from 2.5 to 4.5 DCLK later
@@ -1324,10 +1331,11 @@ l343     Sprite Y position, inverted (from w680) (latched when w660 set)
 l344     Sprite Y position, NOT inverted (from l343, 0.5 dots later)
 l345     Mode 5 sprite Y position (latched from the cache, 1 dot later)
 l346     Mode 5 sprite Y position, inverted (latched from l345, 0.5 dots later)
-l351     Current sprite ID being processed
+l351     Current sprite ID being processed (in mode 5)
 l352     Used to stretch out l353 one cycle longer
 l363     Is VRAM address within sprite cache range (upper byte) (from w693)
 l364     Is VRAM address within sprite cache range (lower byte) (from w694)
+l365     Current pair of sprite IDs being processed (in mode 4)
 l368     Set if l367(?) OR sprite render list index reached 20 (from w698), used in w700
 l371     Sprite to render index (to w697->sprite queue index)
 l372     Set if hpos = 258+2 (H32) or 322+2 (H40), 2 dots later than when F flag is cleared (from w360)
@@ -1500,7 +1508,7 @@ l571     VRAM write to upper byte (latched from w286, goes to w991 and w1000)
 l572     Free VRAM slot (CPU access allowed) (latched from w359->l109->l574->l590->l573, 4 dots later, used in w993)
 l573     Free VRAM slot (CPU access allowed) (latched from w359->l109->l574->l590, 3.5 dots later, used in w993)
 l574     Free VRAM slot (CPU access allowed) (latched from w359->l109, 2 dots later, used in w1001)
-l575     w1001 (free VRAM or refresh slot) delayed further until the next hclk1 (used in w985 for /OE)
+l575     NOT free VRAM nor refresh slot, delayed until the next hclk1 (used in w985 to assert /OE1 to load serial data)
 l576     Part of the timing chain that controls VRAM bus output
 l577     Part of the timing chain that controls VRAM bus output
 l578     Part of the timing chain that controls VRAM bus output
@@ -1532,6 +1540,7 @@ l609     (delays w1069, goes to l610->l629->DAC)
 l610     (from l610, goes to l629->DAC) Shadow flag reported from reading test reg 4
 l611     (delays w1070, goes to l612->l630->DAC)
 l612     (from l612, goes to l630->DAC) Highlight flag reported from reading test reg 4
+l613     Set to pull low the SPA/B pin (from w1071)
 l615     SPA/B pin's input (logic reversed from pin!)
 l617     CRAM address to access (from w1076)
 l618     (from w1075, delayed by 3 dots) Set when going to output viewport pixels?
@@ -1694,6 +1703,7 @@ b_col          Checks for each possible blue level, before S/H
 io_address_val    Internal CPU address bus
 io_address        CPU address bits 22:1
 io_address_22o    Output CPU address bit 23
+io_cas0           CAS output (*high* logic)
 
 
 * Register write enables at w210..w233 (not in order, see below)
